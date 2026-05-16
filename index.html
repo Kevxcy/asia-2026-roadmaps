@@ -30,7 +30,7 @@ h1 {font-family: Georgia, 'Times New Roman', serif; font-weight:500; letter-spac
 .badge {border:1px solid rgba(215,180,106,.38); color:#f5ddb0; padding:10px 13px; border-radius:999px; background:rgba(215,180,106,.08); font-size:12px; font-weight:800; letter-spacing:.08em; text-transform:uppercase; white-space:nowrap}
 .city-grid {display:grid; grid-template-columns:minmax(340px, 42%) 1fr; min-height:660px;}
 .sidebar {padding:24px; overflow:auto; max-height:780px; border-right:1px solid rgba(255,255,255,.09);}
-.map {height:780px; min-height:620px; background:#0f172a;}
+.map {height:700px; min-height:580px; background:#0f172a;}
 .hotel-card {border:1px solid rgba(215,180,106,.3); background:linear-gradient(180deg,rgba(215,180,106,.12),rgba(215,180,106,.045)); border-radius:20px; padding:16px; margin-bottom:18px;}
 .hotel-card .label {color:var(--gold); font-size:11px; text-transform:uppercase; letter-spacing:.16em; font-weight:900;}
 .hotel-card strong {display:block; font-size:16px; margin-top:7px}
@@ -68,8 +68,8 @@ h1 {font-family: Georgia, 'Times New Roman', serif; font-weight:500; letter-spac
   .city h2 {font-size:36px; line-height:1;}
   .subtitle {font-size:14px;}
   .badge {width:max-content; max-width:100%; white-space:normal; padding:9px 11px; font-size:10px;}
-  .city-grid {display:flex; flex-direction:column; min-height:0;}
-  .map {order:1; width:100%; height:58vh; min-height:390px; max-height:560px; border-bottom:1px solid rgba(255,255,255,.09);}
+  .city-grid {display:flex; flex-direction:column; min-height:0; min-height:380px;}
+  .map {order:1; width:100%; height:380px; min-height:380px; max-height:560px; border-bottom:1px solid rgba(255,255,255,.09); flex-shrink:0;}
   .sidebar {order:2; padding:14px; border-bottom:0; overflow:visible;}
   .hotel-card {border-radius:16px; padding:14px; margin-bottom:14px;}
   .day {border-radius:15px; margin:12px 0 16px;}
@@ -117,7 +117,33 @@ app.innerHTML = cities.map(cityTemplate).join('');
 if (window.L) {
   cities.forEach(city => {
     const map = L.map('map-' + city.id, {scrollWheelZoom:false}).setView(city.center, city.zoom);
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {maxZoom:19, attribution:'&copy; OpenStreetMap contributors'}).addTo(map);
+    // Primary: CartoDB (works in China), fallback: Esri
+    const tileProviders = [
+      'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}.png',
+      'https://server.arcgisonline.com/ArcGIS/rest/services/World_Topo_Map/MapServer/tile/{z}/{y}/{x}'
+    ];
+    const tileAttr = '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="https://carto.com/attributions">CARTO</a> | Tiles accessible in China';
+    let tileLayer = null;
+    function tryTiles(idx) {
+      if (idx >= tileProviders.length) {
+        document.getElementById('map-' + city.id).innerHTML = '<div style="padding:24px;color:#fff;font-size:14px">Map tiles unavailable. Stops listed at left — open coordinates in Apple/Google Maps directly.</div>';
+        return;
+      }
+      tileLayer = L.tileLayer(tileProviders[idx], {maxZoom:19, attribution: tileAttr, subdomains:'abcd'}).addTo(map);
+    }
+    tryTiles(0);
+    // Detect if tiles failed to load (grey screen) and retry with next provider
+    const mapDiv = document.getElementById('map-' + city.id);
+    let tileFailTimer = null;
+    mapDiv.addEventListener('tileerror', function() {
+      if (tileFailTimer) clearTimeout(tileFailTimer);
+      tileFailTimer = setTimeout(function() {
+        if (map.hasLayer(tileLayer)) {
+          map.removeLayer(tileLayer);
+          tryTiles(1);
+        }
+      }, 3000);
+    });
     const bounds = [];
     const h = city.hotel;
     bounds.push([h.lat,h.lon]);
@@ -130,9 +156,28 @@ if (window.L) {
       });
       if (latlngs.length > 1) L.polyline(latlngs, {color: day.color, weight:3, opacity:.78, dashArray:'8 8'}).addTo(map);
     });
-    map.fitBounds(bounds, {padding:[36,36]});
-    setTimeout(() => map.invalidateSize(), 250);
-    window.addEventListener('orientationchange', () => setTimeout(() => { map.invalidateSize(); map.fitBounds(bounds, {padding:[24,24]}); }, 450));
+    // Ensure map tiles render correctly with proper container sizing
+    function ensureMapSize() {
+      map.invalidateSize({pan: true});
+      map.fitBounds(bounds, {padding: [36, 36]});
+    }
+    // Multiple timing attempts for mobile (CSS transitions, scroll, orientation)
+    ensureMapSize();
+    setTimeout(ensureMapSize, 400);
+    setTimeout(ensureMapSize, 1200);
+    setTimeout(ensureMapSize, 3000);
+    // Watch for container size changes (CSS flex column reorder, scrollIntoView)
+    if (typeof ResizeObserver !== 'undefined') {
+      new ResizeObserver(() => { map.invalidateSize({pan: false}); }).observe(mapDiv);
+    }
+    // Re-invalidate when city section scrolls into view (iPhone jump nav)
+    const citySection = document.getElementById(city.id);
+    if (citySection && typeof IntersectionObserver !== 'undefined') {
+      new IntersectionObserver((entries) => {
+        entries.forEach(e => { if (e.isIntersecting) setTimeout(ensureMapSize, 200); });
+      }, {threshold: 0.1}).observe(citySection);
+    }
+    window.addEventListener('orientationchange', () => setTimeout(ensureMapSize, 500));
   });
 } else {
   document.querySelectorAll('.map').forEach(m => m.innerHTML = '<div style="padding:24px;color:#fff">Map library failed to load. Stop lists are still available at left.</div>');
