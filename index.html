@@ -1,0 +1,142 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<title>China City Roadmaps · Chongqing · Shanghai · Beijing</title>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIINfQd8n9tqrb6N9D9j7Q6tlfWPgU04xyI=" crossorigin=""/>
+<style>
+:root {
+  --bg:#0b0e13; --panel:#111722; --panel2:#151d2a; --ink:#f5f2ea; --muted:#9fa8b8; --line:#273244;
+  --gold:#d7b46a; --red:#ff7a59; --green:#7fd1b9; --blue:#93c5fd; --violet:#b8a1ff;
+  --shadow: 0 24px 80px rgba(0,0,0,.34); --radius:22px;
+}
+* {box-sizing:border-box}
+body { margin:0; background: radial-gradient(circle at 20% 0%, #182132 0, transparent 34%), linear-gradient(180deg,#0b0e13,#080a0e); color:var(--ink); font-family: Inter, ui-sans-serif, system-ui, -apple-system, Segoe UI, sans-serif; }
+a {color:inherit}
+button, a { -webkit-tap-highlight-color: rgba(215,180,106,.18); }
+.hero { padding:52px clamp(20px,4vw,64px) 28px; border-bottom:1px solid rgba(255,255,255,.08); }
+.kicker { color:var(--gold); text-transform:uppercase; letter-spacing:.22em; font-size:12px; font-weight:800; }
+h1 {font-family: Georgia, 'Times New Roman', serif; font-weight:500; letter-spacing:-.045em; font-size:clamp(44px,7vw,104px); line-height:.88; margin:18px 0 16px; max-width:1100px;}
+.hero p {color:var(--muted); max-width:850px; font-size:17px; line-height:1.65}
+.jump-nav {display:flex; gap:10px; flex-wrap:wrap; margin-top:24px}
+.jump-nav a {min-height:44px; display:inline-flex; align-items:center; justify-content:center; padding:11px 15px; border-radius:999px; border:1px solid rgba(255,255,255,.14); background:rgba(255,255,255,.06); color:var(--ink); text-decoration:none; font-weight:850; font-size:13px}
+.jump-nav a:focus-visible, .map-link:focus-visible {outline:3px solid rgba(215,180,106,.7); outline-offset:3px}
+.shell { padding:28px clamp(16px,3vw,44px) 64px; display:grid; gap:34px; }
+.city {background:linear-gradient(180deg, rgba(255,255,255,.055), rgba(255,255,255,.025)); border:1px solid rgba(255,255,255,.11); border-radius:28px; box-shadow:var(--shadow); overflow:hidden;}
+.city-head {padding:28px; display:grid; grid-template-columns:1fr auto; gap:18px; align-items:end; border-bottom:1px solid rgba(255,255,255,.09)}
+.city h2 {font-family: Georgia, 'Times New Roman', serif; font-size:clamp(32px,4vw,62px); line-height:.95; letter-spacing:-.035em; margin:0 0 8px}
+.subtitle {color:var(--muted); line-height:1.5}
+.badge {border:1px solid rgba(215,180,106,.38); color:#f5ddb0; padding:10px 13px; border-radius:999px; background:rgba(215,180,106,.08); font-size:12px; font-weight:800; letter-spacing:.08em; text-transform:uppercase; white-space:nowrap}
+.city-grid {display:grid; grid-template-columns:minmax(340px, 42%) 1fr; min-height:660px;}
+.sidebar {padding:24px; overflow:auto; max-height:780px; border-right:1px solid rgba(255,255,255,.09);}
+.map {height:780px; min-height:620px; background:#0f172a;}
+.hotel-card {border:1px solid rgba(215,180,106,.3); background:linear-gradient(180deg,rgba(215,180,106,.12),rgba(215,180,106,.045)); border-radius:20px; padding:16px; margin-bottom:18px;}
+.hotel-card .label {color:var(--gold); font-size:11px; text-transform:uppercase; letter-spacing:.16em; font-weight:900;}
+.hotel-card strong {display:block; font-size:16px; margin-top:7px}
+.hotel-card small {color:var(--muted); display:block; margin-top:4px}
+.day {margin:16px 0 20px; border:1px solid rgba(255,255,255,.09); border-radius:18px; overflow:hidden; background:rgba(255,255,255,.025)}
+.day-title {padding:13px 15px; font-weight:900; display:flex; gap:10px; align-items:center; border-bottom:1px solid rgba(255,255,255,.08)}
+.swatch {width:9px; height:9px; border-radius:999px; box-shadow:0 0 0 4px rgba(255,255,255,.06)}
+.stop {display:grid; grid-template-columns:34px 1fr; gap:11px; padding:12px 15px; border-bottom:1px solid rgba(255,255,255,.06)}
+.stop:last-child {border-bottom:0}
+.num {width:28px;height:28px; display:grid; place-items:center; border-radius:50%; color:#0b0e13; font-weight:950; font-size:13px;}
+.stop b {display:block; font-size:14px}
+.stop span {display:block; color:var(--muted); font-size:12px; line-height:1.45; margin-top:3px}
+.leaflet-container {background:#111827; font-family:Inter, ui-sans-serif, system-ui}
+.marker-num, .marker-hotel {display:grid; place-items:center; border-radius:999px; font-weight:950; border:2px solid #0b0e13; box-shadow:0 8px 20px rgba(0,0,0,.35)}
+.marker-num {width:27px; height:27px; color:#071016; font-size:12px;}
+.marker-hotel {width:34px;height:34px; background:var(--gold); color:#101010; font-size:13px;}
+.popup b {font-size:14px} .popup small {color:#667085}
+.popup .links {display:flex; gap:8px; flex-wrap:wrap; margin-top:8px}
+.popup .links a {display:inline-flex; min-height:36px; align-items:center; padding:8px 10px; border-radius:10px; background:#111827; color:#fff; text-decoration:none; font-weight:800}
+.map-link {display:inline-flex; min-height:44px; align-items:center; margin-top:8px; padding:8px 11px; border-radius:12px; background:rgba(147,197,253,.12); border:1px solid rgba(147,197,253,.24); color:#dbeafe; text-decoration:none; font-size:12px; font-weight:850}
+.footer {color:var(--muted); padding:0 clamp(20px,4vw,64px) 42px; font-size:13px; line-height:1.6}
+.footer code {color:#e8d09a}
+@media (max-width: 980px) { .city-grid {grid-template-columns:1fr} .sidebar {max-height:none; border-right:0; border-bottom:1px solid rgba(255,255,255,.09)} .map {height:620px} .city-head {grid-template-columns:1fr} }
+@media (max-width: 640px) {
+  body { background:#080a0e; -webkit-text-size-adjust:100%; }
+  .hero { padding:calc(28px + env(safe-area-inset-top)) max(16px, env(safe-area-inset-left)) 18px max(16px, env(safe-area-inset-right)); }
+  .kicker {font-size:10px; letter-spacing:.16em}
+  h1 {font-size:clamp(38px, 14vw, 56px); line-height:.94; letter-spacing:-.035em; margin:14px 0 12px;}
+  .hero p {font-size:15px; line-height:1.55;}
+  .jump-nav {gap:8px; margin-top:18px; position:sticky; top:0; z-index:500; padding:8px 0; background:linear-gradient(180deg,#080a0e 70%,rgba(8,10,14,0));}
+  .jump-nav a {flex:1 1 30%; padding:10px 8px; font-size:12px; min-height:44px;}
+  .shell {padding:16px max(10px, env(safe-area-inset-left)) 40px max(10px, env(safe-area-inset-right)); gap:22px;}
+  .city {border-radius:20px; box-shadow:0 16px 44px rgba(0,0,0,.42);}
+  .city-head {padding:18px 16px; gap:12px; align-items:start;}
+  .city h2 {font-size:36px; line-height:1;}
+  .subtitle {font-size:14px;}
+  .badge {width:max-content; max-width:100%; white-space:normal; padding:9px 11px; font-size:10px;}
+  .city-grid {display:flex; flex-direction:column; min-height:0;}
+  .map {order:1; width:100%; height:58vh; min-height:390px; max-height:560px; border-bottom:1px solid rgba(255,255,255,.09);}
+  .sidebar {order:2; padding:14px; border-bottom:0; overflow:visible;}
+  .hotel-card {border-radius:16px; padding:14px; margin-bottom:14px;}
+  .day {border-radius:15px; margin:12px 0 16px;}
+  .day-title {padding:12px 13px; font-size:13px; line-height:1.25;}
+  .stop {grid-template-columns:38px 1fr; gap:10px; padding:13px;}
+  .num {width:32px; height:32px; font-size:13px;}
+  .stop b {font-size:14px; line-height:1.25;}
+  .stop span {font-size:12px; line-height:1.45;}
+  .marker-num {width:32px; height:32px; font-size:13px; border-width:3px;}
+  .marker-hotel {width:38px; height:38px; font-size:14px; border-width:3px;}
+  .leaflet-control-zoom a {width:44px !important; height:44px !important; line-height:44px !important; font-size:22px !important;}
+  .leaflet-popup-content {font-size:14px; margin:14px; max-width:240px;}
+  .popup .links a {min-height:44px; padding:10px 12px;}
+  .footer {padding:0 max(16px, env(safe-area-inset-left)) calc(32px + env(safe-area-inset-bottom)) max(16px, env(safe-area-inset-right)); font-size:12px;}
+}
+@media (max-width: 390px) { .map {height:54vh; min-height:360px} .jump-nav a {font-size:11px} }
+</style>
+</head>
+<body>
+<header class="hero">
+  <div class="kicker">Asia 2026 · China roadmaps</div>
+  <h1>Numbered city legs, anchored from the hotel.</h1>
+  <p>Planning maps for Chongqing, Shanghai, and Beijing using the current itinerary. Hotel pins use the narrowed recommendation lane; stops are numbered in travel order and grouped by day. Coordinates are from OpenStreetMap/Nominatim where available, with manual city-map corrections for small lanes/restaurant zones that OSM does not resolve cleanly.</p>
+  <nav class="jump-nav" aria-label="City sections"><a href="#chongqing">Chongqing</a><a href="#shanghai">Shanghai</a><a href="#beijing">Beijing</a></nav>
+</header>
+<main class="shell" id="app"></main>
+<section class="footer">
+  <strong>Navigation caveat:</strong> this is a planning artifact using WGS84/OpenStreetMap tiles. In China, use Apple Maps/Amap/高德 for live turn-by-turn routing, subway exits, taxi pickup points, and GCJ-02 local-coordinate handling. Before booking or navigating, recheck exact hotel branch, restaurant branch, opening status, and Chinese address.
+</section>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+<script>
+const cities = [{"id": "chongqing", "name": "Chongqing", "subtitle": "Aug 6–11 · Yuzhong base, hills, river views, hotpot logistics", "center": [29.557, 106.555], "zoom": 12, "hotel": {"name": "Hotel pin: Atour Hotel Chongqing Jiefangbei Raffles City River View", "cn": "重庆解放碑来福士广场江景亚朵酒店", "lat": 29.5637351, "lon": 106.5807524, "note": "Primary hotel recommendation zone: Jiefangbei / Raffles / Hongyadong."}, "days": [{"label": "Day 10 · Aug 7 · Yuzhong walking core", "color": "#ff7a59", "stops": [{"n": 1, "name": "Jiefangbei Pedestrian Street", "cn": "解放碑步行街", "lat": 29.56293, "lon": 106.57715, "note": "Start central; liberation monument / pedestrian area."}, {"n": 2, "name": "Bayi Road Food Street", "cn": "八一路好吃街", "lat": 29.56125, "lon": 106.57485, "note": "Snack/lunch zone."}, {"n": 3, "name": "Mountain City Trail", "cn": "山城步道", "lat": 29.5519, "lon": 106.5658, "note": "Heat-sensitive walking segment; start early."}, {"n": 4, "name": "Shibati Traditional Area", "cn": "十八梯", "lat": 29.5537658, "lon": 106.5696236, "note": "Restored steps/old-town texture."}, {"n": 5, "name": "Baixiangju", "cn": "白象居", "lat": 29.5566, "lon": 106.5799, "note": "Photo/old residential landmark; keep optional."}, {"n": 6, "name": "Huguang Guild Hall", "cn": "湖广会馆", "lat": 29.5586, "lon": 106.5869, "note": "Historic guild hall near east Yuzhong."}, {"n": 7, "name": "Raffles City Chongqing", "cn": "重庆来福士广场", "lat": 29.5675551, "lon": 106.5831253, "note": "AC / mall / river view reset."}, {"n": 8, "name": "Hongya Cave", "cn": "洪崖洞", "lat": 29.5650738, "lon": 106.5753425, "note": "Best after dark; crowd/taxi buffer."}]}, {"label": "Day 11 · Aug 8 · South bank + cableway", "color": "#f4c430", "stops": [{"n": 9, "name": "Changjiahui / Danzishi Old Street", "cn": "长嘉汇 / 弹子石老街", "lat": 29.5667, "lon": 106.5948, "note": "South-bank old street and views."}, {"n": 10, "name": "Nanbin Zhonglou Square", "cn": "南滨钟楼广场", "lat": 29.5515, "lon": 106.5876, "note": "Riverside / South-bank route."}, {"n": 11, "name": "Longmenhao Old Street", "cn": "龙门浩老街", "lat": 29.5518, "lon": 106.5837, "note": "Best paired with cableway/South bank."}, {"n": 12, "name": "Yangtze River Cableway", "cn": "长江索道", "lat": 29.5580403, "lon": 106.5844384, "note": "Queue check; use one-way if needed."}]}, {"label": "Day 12 · Aug 9 · Eling, museum, Guanyinqiao", "color": "#7fd1b9", "stops": [{"n": 13, "name": "Eling Erchang Creative Park", "cn": "鹅岭二厂", "lat": 29.5527, "lon": 106.541, "note": "Creative park / hilltop-ish stop."}, {"n": 14, "name": "Liziba Station", "cn": "李子坝站", "lat": 29.5556616, "lon": 106.5339223, "note": "Monorail-through-building photo stop."}, {"n": 15, "name": "Great Hall of the People", "cn": "重庆人民大礼堂", "lat": 29.564, "lon": 106.55, "note": "Pair with museum across the square."}, {"n": 16, "name": "Three Gorges Museum", "cn": "三峡博物馆", "lat": 29.5648943, "lon": 106.5465582, "note": "AC/heat fallback anchor."}, {"n": 17, "name": "Bei Cang Cultural Creative Street", "cn": "北仓文创街区", "lat": 29.5773, "lon": 106.5305, "note": "Cafe/creative break near Guanyinqiao."}, {"n": 18, "name": "Guanyinqiao Pedestrian Area", "cn": "观音桥步行街", "lat": 29.5758813, "lon": 106.5311917, "note": "Evening food/shopping zone."}]}, {"label": "Day 13 · Aug 10 · Ciqikou + zoo + Huangjueping", "color": "#b8a1ff", "stops": [{"n": 19, "name": "Ciqikou Ancient Town", "cn": "磁器口古镇", "lat": 29.5792968, "lon": 106.4424353, "note": "Go early; crowds/heat build."}, {"n": 20, "name": "Qicai Alley / Qi Cai Xiang", "cn": "七彩巷", "lat": 29.5809, "lon": 106.4465, "note": "Near Ciqikou; optional color/photo lane."}, {"n": 21, "name": "Chongqing Zoo", "cn": "重庆动物园", "lat": 29.5066423, "lon": 106.5022128, "note": "Pandas if priority; earlier is better."}, {"n": 22, "name": "Traffic Teahouse", "cn": "交通茶馆", "lat": 29.505, "lon": 106.5352, "note": "Old-school tea stop; cash/slow pace."}, {"n": 23, "name": "Huangjueping Graffiti Street", "cn": "黄桷坪涂鸦街", "lat": 29.5039, "lon": 106.5356, "note": "Pair with Traffic Teahouse."}, {"n": 24, "name": "Yangjiaping / Xi Jie pedestrian area", "cn": "杨家坪 / 西街步行街", "lat": 29.5052, "lon": 106.5124, "note": "Evening/local food zone if still nearby."}]}]}, {"id": "shanghai", "name": "Shanghai", "subtitle": "Aug 13–17 · Jing’an base, Disney, Old City/Bund, FFC cafés", "center": [31.223, 121.485], "zoom": 11, "hotel": {"name": "Hotel pin: Campanile Shanghai Jing An", "cn": "康铂酒店上海静安", "lat": 31.2211256, "lon": 121.4392768, "note": "Primary hotel-lane pin: Jing’an / Nanjing West Road value-midrange."}, "days": [{"label": "Day 16 · Aug 13 · Arrival light day", "color": "#ff7a59", "stops": [{"n": 1, "name": "Xintiandi", "cn": "新天地", "lat": 31.2219311, "lon": 121.4704371, "note": "Easy central intro if energy allows."}, {"n": 2, "name": "The Bund / North Bund evening", "cn": "外滩", "lat": 31.2353356, "lon": 121.487632, "note": "Only if arrival is smooth; otherwise sleep."}]}, {"label": "Day 17 · Aug 14 · Shanghai Disneyland", "color": "#f4c430", "stops": [{"n": 3, "name": "Shanghai Disneyland", "cn": "上海迪士尼乐园", "lat": 31.1462523, "lon": 121.6562825, "note": "Full-day resort commitment; no city detours."}]}, {"label": "Day 18 · Aug 15 · Old City → People’s Square → Bund", "color": "#7fd1b9", "stops": [{"n": 4, "name": "Yu Garden / Yuyuan", "cn": "豫园", "lat": 31.2289274, "lon": 121.4879752, "note": "Early morning before tour groups/heat."}, {"n": 5, "name": "Lu Bo Lang", "cn": "绿波廊酒楼", "lat": 31.2284191, "lon": 121.4875436, "note": "Sit-down Yuyuan meal option."}, {"n": 6, "name": "Jia Jia Tang Bao", "cn": "佳家汤包", "lat": 31.2370072, "lon": 121.4660479, "note": "Only if queue is sane; near People’s Square."}, {"n": 7, "name": "People’s Square", "cn": "人民广场", "lat": 31.2319264, "lon": 121.4715447, "note": "Central transfer / AC reset."}, {"n": 8, "name": "Shanghai Museum", "cn": "上海博物馆", "lat": 31.2301577, "lon": 121.4709998, "note": "Indoor heat/rain anchor; reserve if required."}, {"n": 9, "name": "Nanjing East Road", "cn": "南京东路", "lat": 31.235, "lon": 121.478, "note": "Walk corridor toward Bund; optional if tired."}, {"n": 10, "name": "Bund dinner zone", "cn": "外滩餐厅区", "lat": 31.2347, "lon": 121.49, "note": "Meet the Bund / Yi Long Court / VUE / Lost Heaven lane."}]}, {"label": "Day 19 · Aug 16 · FFC / Jing’an / Xintiandi", "color": "#b8a1ff", "stops": [{"n": 11, "name": "Wukang Mansion", "cn": "武康大楼", "lat": 31.2062561, "lon": 121.4337292, "note": "Start of FFC architecture/cafe walk."}, {"n": 12, "name": "Anfu Road", "cn": "安福路", "lat": 31.2156179, "lon": 121.4380352, "note": "Cafe/shopping street."}, {"n": 13, "name": "RAC Coffee", "cn": "RAC Coffee 安福路", "lat": 31.2151768, "lon": 121.4357134, "note": "First-choice cafe/brunch stop."}, {"n": 14, "name": "Ferguson Lane", "cn": "武康庭", "lat": 31.2083571, "lon": 121.4344178, "note": "FFC cafe/shops cluster."}, {"n": 15, "name": "Old Jesse", "cn": "老吉士", "lat": 31.2046888, "lon": 121.4333182, "note": "Classic Shanghainese meal; reserve."}, {"n": 16, "name": "Jing’an Temple", "cn": "静安寺", "lat": 31.225215, "lon": 121.4407923, "note": "Optional second zone; near hotel."}, {"n": 17, "name": "Xintiandi / Speak Low area", "cn": "新天地 / 彼楼区域", "lat": 31.2219311, "lon": 121.4704371, "note": "Dinner/cocktail if energy allows."}]}, {"label": "Day 20 · Aug 17 · Luggage-first split / Beijing transfer", "color": "#93c5fd", "stops": [{"n": 18, "name": "Shanghai Tower", "cn": "上海中心大厦", "lat": 31.2356449, "lon": 121.5012495, "note": "Only if visibility + luggage logistics are clean."}, {"n": 19, "name": "IFC Mall / Lujiazui", "cn": "上海国金中心 / 陆家嘴", "lat": 31.2382015, "lon": 121.4979511, "note": "AC lunch/coffee if in Pudong."}]}]}, {"id": "beijing", "name": "Beijing", "subtitle": "Aug 17–19 · one practical day, central base, PEK red-eye transfer", "center": [39.915, 116.418], "zoom": 12, "hotel": {"name": "Hotel pin: Holiday Inn Express Beijing Dongzhimen", "cn": "北京东直门智选假日酒店", "lat": 39.9353898, "lon": 116.4372379, "note": "Primary pick: central enough, airport-transfer story clean."}, "days": [{"label": "Day 21 · Aug 18 · Low-friction cultural day", "color": "#7fd1b9", "stops": [{"n": 1, "name": "Dongzhimen Station", "cn": "东直门站", "lat": 39.941652, "lon": 116.4285738, "note": "Arrival/airport-express/transit reference point."}, {"n": 2, "name": "Lama Temple", "cn": "雍和宫", "lat": 39.9455793, "lon": 116.4110049, "note": "Best default anchor if timing is tight."}, {"n": 3, "name": "Wudaoying Hutong", "cn": "五道营胡同", "lat": 39.9472, "lon": 116.4083, "note": "Cafe/hutong walk near Lama Temple."}, {"n": 4, "name": "Temple of Heaven", "cn": "天坛公园", "lat": 39.8799066, "lon": 116.4028716, "note": "Alternative morning anchor; don’t force both if tired."}, {"n": 5, "name": "Wangfujing", "cn": "王府井", "lat": 39.9069496, "lon": 116.4052789, "note": "Central shopping/food fallback."}, {"n": 6, "name": "Siji Minfu Peking Duck · Wangfujing/Dongcheng lane", "cn": "四季民福烤鸭", "lat": 39.9078, "lon": 116.4115, "note": "Pick branch by route and reservation/queue."}]}, {"label": "Night of Aug 18/19 · PEK red-eye", "color": "#ff7a59", "stops": [{"n": 7, "name": "Beijing Capital International Airport T3", "cn": "北京首都国际机场 T3", "lat": 40.0525, "lon": 116.61583, "note": "For KE864 01:30. Leave central hotel ~22:15–22:45 by car."}]}]}];
+const app = document.getElementById('app');
+function gmaps(lat, lon, name) { return `https://www.google.com/maps/search/?api=1&query=${lat},${lon}`; }
+function amap(lat, lon, name) { return `https://maps.apple.com/?ll=${lat},${lon}&q=${encodeURIComponent(name)}`; }
+function markerIcon(label, color, hotel=false) {
+  return L.divIcon({className:'', html:`<div class="${hotel?'marker-hotel':'marker-num'}" style="background:${hotel?'var(--gold)':color}">${label}</div>`, iconSize: hotel?[34,34]:[27,27], iconAnchor: hotel?[17,17]:[13,13], popupAnchor:[0,-14]});
+}
+function cityTemplate(city) {
+  const days = city.days.map(day => `<div class="day"><div class="day-title"><i class="swatch" style="background:${day.color}"></i>${day.label}</div>${day.stops.map(s => `<div class="stop"><div class="num" style="background:${day.color}">${s.n}</div><div><b>${s.name}</b><span>${s.cn} · ${s.note}</span><a class="map-link" target="_blank" rel="noopener" href="${amap(s.lat,s.lon,s.name)}">Open in Apple Maps</a></div></div>`).join('')}</div>`).join('');
+  return `<section class="city" id="${city.id}"><div class="city-head"><div><h2>${city.name}</h2><div class="subtitle">${city.subtitle}</div></div><div class="badge">Hotel → numbered stops</div></div><div class="city-grid"><aside class="sidebar"><div class="hotel-card"><div class="label">Pinned hotel base</div><strong>${city.hotel.name}</strong><small>${city.hotel.cn} · ${city.hotel.note}</small></div>${days}</aside><div class="map" id="map-${city.id}"></div></div></section>`;
+}
+app.innerHTML = cities.map(cityTemplate).join('');
+
+if (window.L) {
+  cities.forEach(city => {
+    const map = L.map('map-' + city.id, {scrollWheelZoom:false}).setView(city.center, city.zoom);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {maxZoom:19, attribution:'&copy; OpenStreetMap contributors'}).addTo(map);
+    const bounds = [];
+    const h = city.hotel;
+    bounds.push([h.lat,h.lon]);
+    L.marker([h.lat,h.lon], {icon: markerIcon('H','var(--gold)',true)}).addTo(map).bindPopup(`<div class="popup"><b>${h.name}</b><br><small>${h.cn}</small><br>${h.note}<br><div class="links"><a target="_blank" rel="noopener" href="${amap(h.lat,h.lon,h.name)}">Apple Maps</a><a target="_blank" rel="noopener" href="${gmaps(h.lat,h.lon,h.name)}">Google Maps</a></div></div>`);
+    city.days.forEach(day => {
+      const latlngs = [];
+      day.stops.forEach(s => {
+        bounds.push([s.lat,s.lon]); latlngs.push([s.lat,s.lon]);
+        L.marker([s.lat,s.lon], {icon: markerIcon(s.n, day.color)}).addTo(map).bindPopup(`<div class="popup"><b>${s.n}. ${s.name}</b><br><small>${s.cn}</small><br>${s.note}<br><div class="links"><a target="_blank" rel="noopener" href="${amap(s.lat,s.lon,s.name)}">Apple Maps</a><a target="_blank" rel="noopener" href="${gmaps(s.lat,s.lon,s.name)}">Google Maps</a></div></div>`);
+      });
+      if (latlngs.length > 1) L.polyline(latlngs, {color: day.color, weight:3, opacity:.78, dashArray:'8 8'}).addTo(map);
+    });
+    map.fitBounds(bounds, {padding:[36,36]});
+    setTimeout(() => map.invalidateSize(), 250);
+    window.addEventListener('orientationchange', () => setTimeout(() => { map.invalidateSize(); map.fitBounds(bounds, {padding:[24,24]}); }, 450));
+  });
+} else {
+  document.querySelectorAll('.map').forEach(m => m.innerHTML = '<div style="padding:24px;color:#fff">Map library failed to load. Stop lists are still available at left.</div>');
+}
+</script>
+</body>
+</html>
