@@ -4,6 +4,10 @@
 // Removed "Schedule logic" and "Big cut" cards per user request; kept "Optional swap"
 const views = [
   {
+    "id": "checklist", "name": "Checklist", "kind": "checklist",
+    "subtitle": "Add and track pre-trip to-do items"
+  },
+  {
     "id": "overview",
     "name": "Overview",
     "kind": "overview",
@@ -20,7 +24,7 @@ const views = [
         "cn": "河内",
         "lat": 21.0283334,
         "lon": 105.854041,
-        "note": "Vietnam staging point before China; West Air flight departs from Hanoi to Chongqing."
+        "note": "Vietnam staging point before China; West Air departs HAN T2 at 18:25 on Aug 6."
       },
       {
         "n": 2,
@@ -113,8 +117,8 @@ const views = [
         "from": 1,
         "to": 4,
         "mode": "Flight",
-        "label": "West Air Hanoi → Chongqing · Aug 6",
-        "note": "Direct flight baseline; confirm flight number, time, PNR, baggage."
+        "label": "West Air HAN T2 → CKG T3 · Aug 6 · 18:25–21:25",
+        "note": "Direct 2 h flight, ~CAD 235. Confirm PNR, baggage allowance, and check-in requirements."
       },
       {
         "from": 4,
@@ -152,20 +156,7 @@ const views = [
         "note": "Connection home."
       }
     ],
-    "cards": [
-      {
-        "title": "Friend recs integrated",
-        "body": "Chagee, Ah Ma Handmade taro mochi milk tea, Xiao Yang Sheng Jian, 小陶面馆, crab-roe noodles, To Summer/Melt Season, Nanjing Road, and Anfu Road are folded into Shanghai only where they fit the locked route."
-      },
-      {
-        "title": "China app stack",
-        "body": "Set up WeChat Pay, Alipay, Meituan, Dianping, DiDi, Amap preferred with Baidu Map backup, plus Trip.com/12306 before departure."
-      },
-      {
-        "title": "Executable baseline",
-        "body": "The public roadmap shows the locked city route. The Chongqing nature-day alternative stays in the Markdown plan only."
-      }
-    ]
+    "cards": []
   },
   {
     "id": "chongqing",
@@ -698,6 +689,41 @@ const views = [
 // ── State ──
 const state = { active: 0, map: null, layers: null, routeLayer: null };
 
+// ── Checklist Storage ──
+const CHECKLIST_KEY = 'asia2026_checklist';
+
+function loadChecklist() {
+  try {
+    return JSON.parse(localStorage.getItem(CHECKLIST_KEY)) || [];
+  } catch { return []; }
+}
+
+function saveChecklist(items) {
+  localStorage.setItem(CHECKLIST_KEY, JSON.stringify(items));
+}
+
+function addChecklistItem(text) {
+  if (!text.trim()) return;
+  const items = loadChecklist();
+  items.push({ id: Date.now(), text: text.trim(), done: false });
+  saveChecklist(items);
+  renderChecklist();
+}
+
+function toggleChecklistItem(id) {
+  const items = loadChecklist();
+  const item = items.find(i => i.id === id);
+  if (item) item.done = !item.done;
+  saveChecklist(items);
+  renderChecklist();
+}
+
+function deleteChecklistItem(id) {
+  const items = loadChecklist().filter(i => i.id !== id);
+  saveChecklist(items);
+  renderChecklist();
+}
+
 // ── Utilities ──
 const $ = id => document.getElementById(id);
 
@@ -741,7 +767,7 @@ function initMap() {
 
   // Dark tiles to match the Anthropic dark theme
   const providers = [
-    { url: 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', subdomains: 'abcd', attr: '&copy; OpenStreetMap &copy; CARTO' },
+    { url: 'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', subdomains: 'abcd', attr: '&copy; OpenStreetMap &copy; CARTO' },
     { url: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Topo_Map/MapServer/tile/{z}/{y}/{x}', subdomains: '', attr: 'Tiles &copy; Esri' }
   ];
 
@@ -775,6 +801,22 @@ function renderTabs() {
 function renderView() {
   const view = views[state.active];
   renderTabs();
+
+  const mapWrap = document.querySelector('.map-wrap');
+  const content = $('content');
+
+  if (view.kind === 'checklist') {
+    $('eyebrow').textContent = 'Pre-trip preparation';
+    $('title').textContent = view.name;
+    $('subtitle').textContent = view.subtitle;
+    mapWrap.classList.add('hidden');
+    content.classList.add('checklist-content');
+    renderChecklist();
+    return;
+  }
+
+  mapWrap.classList.remove('hidden');
+  content.classList.remove('checklist-content');
   $('eyebrow').textContent = view.kind === 'overview' ? 'Complete baseline overview' : 'City roadmap';
   $('title').textContent = view.name;
   $('subtitle').textContent = view.subtitle;
@@ -782,6 +824,33 @@ function renderView() {
   renderMap(view);
   setTimeout(resizeMap, 50);
   setTimeout(resizeMap, 700);
+}
+
+function renderChecklist() {
+  const items = loadChecklist();
+  const done = items.filter(i => i.done).length;
+  const total = items.length;
+
+  const itemsHtml = items.length === 0
+    ? '<div class="checklist-empty">No items yet. Add your first pre-trip task above.</div>'
+    : items.map(i => `
+      <div class="checklist-item ${i.done ? 'checked' : ''}">
+        <button class="checklist-check" onclick="toggleChecklistItem(${i.id})" aria-label="Toggle">${i.done ? '✓' : ''}</button>
+        <span class="checklist-text">${esc(i.text)}</span>
+        <button class="checklist-delete" onclick="deleteChecklistItem(${i.id})" aria-label="Delete">✕</button>
+      </div>
+    `).join('');
+
+  $('content').innerHTML = `
+    <div>
+      <div class="checklist-add">
+        <input class="checklist-input" id="checklistInput" type="text" placeholder="Add a checklist item…" onkeydown="if(event.key==='Enter'){addChecklistItem(this.value);this.value='';}" />
+        <button class="checklist-btn" onclick="const inp=$('checklistInput');addChecklistItem(inp.value);inp.value='';inp.focus();">Add</button>
+      </div>
+      ${total > 0 ? `<div class="checklist-stats"><span>${done} of ${total} done</span></div>` : ''}
+      <div class="checklist-items">${itemsHtml}</div>
+    </div>
+  `;
 }
 
 function renderOverview(view) {
