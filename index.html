@@ -46,7 +46,9 @@ h2 { margin:0 0 5px; font-family:Georgia,serif; font-size:36px; line-height:1; l
 .day-title { display:flex; align-items:center; gap:9px; font-weight:950; font-size:13px; line-height:1.25; }
 .swatch { width:9px; height:9px; border-radius:999px; box-shadow:0 0 0 4px rgba(255,255,255,.06); flex:0 0 auto; }
 .route-links { display:flex; gap:7px; flex-wrap:wrap; padding:10px 13px; border-bottom:1px solid rgba(255,255,255,.06); }
-.route-links a,.stop a { min-height:44px; display:inline-flex; align-items:center; justify-content:center; border-radius:13px; padding:10px 12px; text-decoration:none; font-weight:900; font-size:12px; border:1px solid rgba(147,197,253,.24); color:#dbeafe; background:rgba(147,197,253,.12); }
+.route-links a,.stop a,.hotel a { min-height:44px; display:inline-flex; align-items:center; justify-content:center; border-radius:13px; padding:10px 12px; text-decoration:none!important; font-weight:900; font-size:12px; border:1px solid rgba(147,197,253,.30); color:#dbeafe!important; background:rgba(147,197,253,.14); box-shadow:inset 0 1px 0 rgba(255,255,255,.08); }
+.route-links a:visited,.stop a:visited,.hotel a:visited { color:#dbeafe!important; }
+.route-links a:active,.stop a:active,.hotel a:active { transform:translateY(1px); background:rgba(147,197,253,.22); }
 .route-links a { flex:1 1 130px; }
 .stop { display:grid; grid-template-columns:38px 1fr; gap:12px; padding:14px 13px; border-bottom:1px solid rgba(255,255,255,.06); }
 .stop:last-child { border-bottom:0; }
@@ -65,7 +67,11 @@ h2 { margin:0 0 5px; font-family:Georgia,serif; font-size:36px; line-height:1; l
 .popup .links a { min-height:42px; min-width:82px; display:inline-flex; justify-content:center; align-items:center; border-radius:12px; background:#111827; color:#fff; text-decoration:none; font-weight:900; padding:9px 11px; }
 .leaflet-popup-content { margin:15px; line-height:1.45; max-width:260px; }
 .leaflet-popup-content-wrapper { border-radius:16px; }
-.leaflet-control-zoom a { width:44px!important; height:44px!important; line-height:44px!important; font-size:20px!important; }
+.leaflet-control-zoom { border:0!important; border-radius:16px!important; overflow:hidden; box-shadow:0 12px 32px rgba(0,0,0,.36)!important; background:rgba(8,10,14,.84)!important; backdrop-filter:blur(12px); }
+.leaflet-control-zoom a { width:48px!important; height:48px!important; line-height:46px!important; font-size:25px!important; font-weight:900!important; background:rgba(15,23,42,.92)!important; color:#f8fafc!important; border:0!important; border-bottom:1px solid rgba(255,255,255,.14)!important; text-decoration:none!important; text-shadow:none!important; }
+.leaflet-control-zoom a:last-child { border-bottom:0!important; }
+.leaflet-control-zoom a:hover,.leaflet-control-zoom a:focus { background:rgba(30,41,59,.98)!important; color:#fff!important; }
+.leaflet-top.leaflet-left { top:66px; left:8px; }
 .back-to-top { position:fixed; bottom:calc(18px + env(safe-area-inset-bottom)); right:max(16px,env(safe-area-inset-right)); width:46px; height:46px; border-radius:999px; border:1px solid rgba(215,180,106,.35); background:rgba(215,180,106,.22); color:#ffe8b2; z-index:900; box-shadow:0 10px 28px rgba(0,0,0,.45); opacity:0; pointer-events:none; transform:translateY(12px); transition:.22s; }
 .back-to-top.visible { opacity:1; pointer-events:all; transform:translateY(0); }
 @media (min-width: 860px) {
