@@ -678,7 +678,7 @@ const views = [
             "cn": "北京首都国际机场 T2",
             "lat": 40.0802322,
             "lon": 116.5938886,
-            "note": "Korean Air KE864 PEK 01:30 → ICN 04:40; booking ref BW72XV; seats 53A/53B."
+            "note": "Korean Air KE864 PEK 01:30 → ICN 04:40; booking ref [REDACTED]; seats [REDACTED]."
           }
         ]
       }
@@ -686,8 +686,16 @@ const views = [
   }
 ];
 
-// ── State ──
-const state = { active: 0, map: null, layers: null, routeLayer: null };
+const state = { active: 0, map: null, layers: null, routeLayer: null, timers: [] };
+
+function clearTimers() {
+  state.timers.forEach(clearTimeout);
+  state.timers = [];
+}
+
+function addTimer(fn, ms) {
+  state.timers.push(setTimeout(fn, ms));
+}
 
 // ── Checklist Storage ──
 const CHECKLIST_KEY = 'asia2026_checklist';
@@ -705,7 +713,7 @@ const DEFAULT_CHECKLIST = [
   { id: 6, text: 'Book Shanghai → Beijing evening transfer (Aug 16)' },
   { id: 7, text: 'Reserve Shanghai Disneyland tickets (Aug 14)' },
   { id: 8, text: 'Pack rain gear / poncho for Wulong or Zhangjiajie' },
-  { id: 9, text: 'Verify KE864 PEK→ICN booking ref BW72XV / seats 53A-B' },
+  { id: 9, text: 'Verify KE864 PEK→ICN booking ref [REDACTED] / seats [REDACTED]' },
   { id: 10, text: 'Print/save hotel confirmations (Marriott CQ, Atour SH, Holiday Inn BJ)' },
   { id: 11, text: 'Get Trip.com / 12306 set up for train bookings' },
   { id: 12, text: 'Arrange early private driver for Mutianyu Great Wall (Aug 17)' }
@@ -938,9 +946,11 @@ function renderView() {
   $('title').textContent = view.name;
   $('subtitle').textContent = view.subtitle;
   $('content').innerHTML = view.kind === 'overview' ? renderOverview(view) : renderCity(view);
+
+  clearTimers();
   renderMap(view);
-  setTimeout(resizeMap, 50);
-  setTimeout(resizeMap, 700);
+  addTimer(resizeMap, 50);
+  addTimer(resizeMap, 700);
 }
 
 function renderChecklist() {
@@ -1030,7 +1040,7 @@ function renderCity(city) {
       <strong>${esc(city.hotel.name)}</strong>
       <small>${esc(city.hotel.cn)} · ${esc(city.hotel.note)}</small>
       <div class="stop-actions">
-        <a class="action" href="${appleMaps(city.hotel.lat, city.hotel.lon, city.hotel.name)}" target="_blank" rel="noopener">Open in Apple Maps</a>
+        <a class="action" href="${appleMaps(city.hotel.lat, city.hotel.lon, city.hotel.name)}" target="_blank" rel="noopener noreferrer">Open in Apple Maps</a>
       </div>
     </aside>`;
 
@@ -1060,7 +1070,7 @@ function renderCity(city) {
             <b>${esc(s.name)}</b>
             <span>${esc(s.cn)} · ${esc(s.note)}</span>
             <div class="stop-actions">
-              <a class="action" href="${appleMaps(s.lat, s.lon, s.name)}" target="_blank" rel="noopener">Open in Apple Maps</a>
+              <a class="action" href="${appleMaps(s.lat, s.lon, s.name)}" target="_blank" rel="noopener noreferrer">Open in Apple Maps</a>
             </div>
           </div>
           ${preview}
@@ -1073,7 +1083,7 @@ function renderCity(city) {
         <div class="day-title"><i class="swatch" style="background:${day.color}"></i>${esc(day.label)}</div>
       </div>
       <div class="route-links">
-        <a class="action" href="${appleRoute(day.stops)}" target="_blank" rel="noopener">Open route in Apple Maps</a>
+        <a class="action" href="${appleRoute(day.stops)}" target="_blank" rel="noopener noreferrer">Open route in Apple Maps</a>
       </div>
       ${stopsHtml}
     </section>`;
@@ -1089,7 +1099,7 @@ function popupHtml(item) {
     <small>${esc(item.cn || '')}</small><br>
     ${esc(item.note || '')}
     <div class="links">
-      <a href="${appleMaps(item.lat, item.lon, item.name)}" target="_blank" rel="noopener">Apple Maps</a>
+      <a href="${appleMaps(item.lat, item.lon, item.name)}" target="_blank" rel="noopener noreferrer">Apple Maps</a>
     </div>
   </div>`;
 }
@@ -1133,8 +1143,8 @@ function renderMap(view) {
   }
 
   const maxZoom = view.kind === 'overview' ? 7 : 15;
-  setTimeout(() => { resizeMap(); if (bounds.length) state.map.fitBounds(bounds, { padding: [30, 30], maxZoom }); }, 100);
-  setTimeout(() => { resizeMap(); if (bounds.length) state.map.fitBounds(bounds, { padding: [30, 30], maxZoom }); }, 650);
+  addTimer(() => { resizeMap(); if (bounds.length) state.map.fitBounds(bounds, { padding: [30, 30], maxZoom }); }, 100);
+  addTimer(() => { resizeMap(); if (bounds.length) state.map.fitBounds(bounds, { padding: [30, 30], maxZoom }); }, 650);
 }
 
 // ── Navigation ──
