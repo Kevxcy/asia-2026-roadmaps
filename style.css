@@ -137,11 +137,16 @@ button    { font: inherit; color: inherit; cursor: pointer; }
 }
 
 .panel-head {
-  padding: 20px 18px;
-  display: grid;
-  gap: 8px;
+  padding: 24px 22px;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 8px 24px;
   border-bottom: 1px solid var(--line);
 }
+
+.panel-head > div:first-child { flex: 1 1 auto; }
 
 .eyebrow {
   color: var(--accent);
@@ -149,13 +154,14 @@ button    { font: inherit; color: inherit; cursor: pointer; }
   letter-spacing: 0.16em;
   font-size: 10px;
   font-weight: 700;
+  margin-bottom: 4px;
 }
 
 h1 {
   margin: 0;
-  font-size: clamp(32px, 8vw, 72px);
-  line-height: 0.92;
-  letter-spacing: -0.05em;
+  font-size: clamp(28px, 6vw, 56px);
+  line-height: 1;
+  letter-spacing: -0.04em;
   font-weight: 700;
   color: var(--text);
 }
@@ -163,8 +169,10 @@ h1 {
 .sub {
   color: var(--text-dim);
   line-height: 1.45;
-  font-size: 14px;
-  max-width: 900px;
+  font-size: 13px;
+  max-width: 420px;
+  text-align: right;
+  flex: 0 1 auto;
 }
 
 /* --- Map --- */
@@ -211,6 +219,10 @@ h1 {
   padding: 16px;
   display: grid;
   gap: 16px;
+}
+
+.content-full {
+  grid-template-columns: 1fr !important;
 }
 
 /* --- Hotel Card --- */
@@ -546,13 +558,7 @@ h1 {
 @media (min-width: 860px) {
   .shell { padding-left: 34px; padding-right: 34px; }
 
-  .panel-head {
-    padding: 28px;
-    grid-template-columns: 1fr auto;
-    align-items: end;
-  }
-
-  .sub { text-align: right; max-width: 460px; }
+  .panel-head { padding: 28px; }
 
   .content {
     padding: 22px;
@@ -560,6 +566,11 @@ h1 {
     align-items: start;
   }
 
+  .content-full {
+    grid-template-columns: 1fr !important;
+  }
+
+  .content-full .legs { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .overview-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
   .legs          { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .days          { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }

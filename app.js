@@ -691,36 +691,65 @@ const state = { active: 0, map: null, layers: null, routeLayer: null };
 
 // ── Checklist Storage ──
 const CHECKLIST_KEY = 'asia2026_checklist';
+const CHECKLIST_CUSTOM_KEY = 'asia2026_checklist_custom';
+const CHECKLIST_CHECKED_KEY = 'asia2026_checklist_checked';
 
-function loadChecklist() {
-  try {
-    return JSON.parse(localStorage.getItem(CHECKLIST_KEY)) || [];
-  } catch { return []; }
+// Default items baked into the code — visible to everyone
+const DEFAULT_CHECKLIST = [
+  { id: 1, text: 'Confirm West Air HAN→CKG PNR and baggage allowance' },
+  { id: 2, text: 'Set up WeChat Pay + Alipay before departure' },
+  { id: 3, text: 'Download Meituan, Dianping, DiDi, Amap' },
+  { id: 4, text: 'Book Zhangjiajie private tour (Aug 11–12)' },
+  { id: 5, text: 'Book HSR Chongqing East → Zhangjiajie West (Aug 11)' },
+  { id: 6, text: 'Book Shanghai → Beijing evening transfer (Aug 16)' },
+  { id: 7, text: 'Reserve Shanghai Disneyland tickets (Aug 14)' },
+  { id: 8, text: 'Pack rain gear / poncho for Wulong or Zhangjiajie' },
+  { id: 9, text: 'Verify KE864 PEK→ICN booking ref BW72XV / seats 53A-B' },
+  { id: 10, text: 'Print/save hotel confirmations (Marriott CQ, Atour SH, Holiday Inn BJ)' },
+  { id: 11, text: 'Get Trip.com / 12306 set up for train bookings' },
+  { id: 12, text: 'Arrange early private driver for Mutianyu Great Wall (Aug 17)' }
+];
+
+function loadCheckedState() {
+  try { return JSON.parse(localStorage.getItem(CHECKLIST_CHECKED_KEY)) || {}; }
+  catch { return {}; }
 }
 
-function saveChecklist(items) {
-  localStorage.setItem(CHECKLIST_KEY, JSON.stringify(items));
+function loadCustomItems() {
+  try { return JSON.parse(localStorage.getItem(CHECKLIST_CUSTOM_KEY)) || []; }
+  catch { return []; }
+}
+
+function getFullChecklist() {
+  const checked = loadCheckedState();
+  const custom = loadCustomItems();
+  const all = [...DEFAULT_CHECKLIST.map(d => ({ ...d, done: !!checked[d.id] })),
+               ...custom.map(c => ({ ...c, done: !!checked['c' + c.id] }))];
+  return all;
 }
 
 function addChecklistItem(text) {
   if (!text.trim()) return;
-  const items = loadChecklist();
-  items.push({ id: Date.now(), text: text.trim(), done: false });
-  saveChecklist(items);
+  const custom = loadCustomItems();
+  custom.push({ id: Date.now(), text: text.trim() });
+  localStorage.setItem(CHECKLIST_CUSTOM_KEY, JSON.stringify(custom));
   renderChecklist();
 }
 
 function toggleChecklistItem(id) {
-  const items = loadChecklist();
-  const item = items.find(i => i.id === id);
-  if (item) item.done = !item.done;
-  saveChecklist(items);
+  const checked = loadCheckedState();
+  checked[id] = !checked[id];
+  localStorage.setItem(CHECKLIST_CHECKED_KEY, JSON.stringify(checked));
   renderChecklist();
 }
 
 function deleteChecklistItem(id) {
-  const items = loadChecklist().filter(i => i.id !== id);
-  saveChecklist(items);
+  // Can only delete custom items (not defaults)
+  const custom = loadCustomItems().filter(i => i.id !== id);
+  localStorage.setItem(CHECKLIST_CUSTOM_KEY, JSON.stringify(custom));
+  const checked = loadCheckedState();
+  delete checked['c' + id];
+  localStorage.setItem(CHECKLIST_CHECKED_KEY, JSON.stringify(checked));
   renderChecklist();
 }
 
@@ -811,13 +840,21 @@ function renderView() {
     $('subtitle').textContent = view.subtitle;
     mapWrap.classList.add('hidden');
     content.classList.add('checklist-content');
+    content.classList.remove('content-full');
     renderChecklist();
     return;
   }
 
   mapWrap.classList.remove('hidden');
   content.classList.remove('checklist-content');
-  $('eyebrow').textContent = view.kind === 'overview' ? 'Complete baseline overview' : 'City roadmap';
+
+  if (view.kind === 'overview') {
+    content.classList.add('content-full');
+  } else {
+    content.classList.remove('content-full');
+  }
+
+  $('eyebrow').textContent = view.kind === 'overview' ? 'Complete trip overview' : 'City roadmap';
   $('title').textContent = view.name;
   $('subtitle').textContent = view.subtitle;
   $('content').innerHTML = view.kind === 'overview' ? renderOverview(view) : renderCity(view);
@@ -827,36 +864,40 @@ function renderView() {
 }
 
 function renderChecklist() {
-  const items = loadChecklist();
+  const items = getFullChecklist();
   const done = items.filter(i => i.done).length;
   const total = items.length;
+  const custom = loadCustomItems();
+  const customIds = new Set(custom.map(c => c.id));
 
-  const itemsHtml = items.length === 0
-    ? '<div class="checklist-empty">No items yet. Add your first pre-trip task above.</div>'
-    : items.map(i => `
+  const itemsHtml = items.map(i => {
+    const isCustom = customIds.has(i.id);
+    const key = isCustom ? 'c' + i.id : i.id;
+    return `
       <div class="checklist-item ${i.done ? 'checked' : ''}">
-        <button class="checklist-check" onclick="toggleChecklistItem(${i.id})" aria-label="Toggle">${i.done ? '✓' : ''}</button>
+        <button class="checklist-check" onclick="toggleChecklistItem('${key}')" aria-label="Toggle">${i.done ? '✓' : ''}</button>
         <span class="checklist-text">${esc(i.text)}</span>
-        <button class="checklist-delete" onclick="deleteChecklistItem(${i.id})" aria-label="Delete">✕</button>
+        ${isCustom ? `<button class="checklist-delete" onclick="deleteChecklistItem(${i.id})" aria-label="Delete">✕</button>` : ''}
       </div>
-    `).join('');
+    `;
+  }).join('');
 
   $('content').innerHTML = `
     <div>
       <div class="checklist-add">
-        <input class="checklist-input" id="checklistInput" type="text" placeholder="Add a checklist item…" onkeydown="if(event.key==='Enter'){addChecklistItem(this.value);this.value='';}" />
+        <input class="checklist-input" id="checklistInput" type="text" placeholder="Add a custom item…" onkeydown="if(event.key==='Enter'){addChecklistItem(this.value);this.value='';}" />
         <button class="checklist-btn" onclick="const inp=$('checklistInput');addChecklistItem(inp.value);inp.value='';inp.focus();">Add</button>
       </div>
-      ${total > 0 ? `<div class="checklist-stats"><span>${done} of ${total} done</span></div>` : ''}
+      <div class="checklist-stats"><span>${done} of ${total} done</span></div>
       <div class="checklist-items">${itemsHtml}</div>
     </div>
   `;
 }
 
 function renderOverview(view) {
-  const cards = view.cards.map(c =>
+  const cards = (view.cards && view.cards.length) ? view.cards.map(c =>
     `<article class="overview-card"><div class="label">${esc(c.title)}</div><strong>${esc(c.body)}</strong></article>`
-  ).join('');
+  ).join('') : '';
 
   const legs = view.legs.map(l =>
     `<article class="leg-card">
@@ -865,7 +906,8 @@ function renderOverview(view) {
     </article>`
   ).join('');
 
-  return `<div class="grid"><div class="overview-grid">${cards}</div></div><div class="legs">${legs}</div>`;
+  const cardsBlock = cards ? `<div class="grid"><div class="overview-grid">${cards}</div></div>` : '';
+  return `${cardsBlock}<div class="legs">${legs}</div>`;
 }
 
 function renderCity(city) {
