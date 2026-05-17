@@ -693,6 +693,7 @@ const state = { active: 0, map: null, layers: null, routeLayer: null };
 const CHECKLIST_KEY = 'asia2026_checklist';
 const CHECKLIST_CUSTOM_KEY = 'asia2026_checklist_custom';
 const CHECKLIST_CHECKED_KEY = 'asia2026_checklist_checked';
+const CHECKLIST_DELETED_KEY = 'asia2026_checklist_deleted';
 
 // Default items baked into the code — visible to everyone
 const DEFAULT_CHECKLIST = [
@@ -720,12 +721,19 @@ function loadCustomItems() {
   catch { return []; }
 }
 
+function loadDeletedDefaults() {
+  try { return JSON.parse(localStorage.getItem(CHECKLIST_DELETED_KEY)) || []; }
+  catch { return []; }
+}
+
 function getFullChecklist() {
   const checked = loadCheckedState();
   const custom = loadCustomItems();
-  const all = [...DEFAULT_CHECKLIST.map(d => ({ ...d, done: !!checked[d.id] })),
-               ...custom.map(c => ({ ...c, done: !!checked['c' + c.id] }))];
-  return all;
+  const deleted = new Set(loadDeletedDefaults());
+  const defaults = DEFAULT_CHECKLIST.filter(d => !deleted.has(d.id))
+    .map(d => ({ ...d, done: !!checked[d.id], isDefault: true }));
+  const customs = custom.map(c => ({ ...c, done: !!checked['c' + c.id], isDefault: false }));
+  return [...defaults, ...customs];
 }
 
 function addChecklistItem(text) {
@@ -743,13 +751,18 @@ function toggleChecklistItem(id) {
   renderChecklist();
 }
 
-function deleteChecklistItem(id) {
-  // Can only delete custom items (not defaults)
-  const custom = loadCustomItems().filter(i => i.id !== id);
-  localStorage.setItem(CHECKLIST_CUSTOM_KEY, JSON.stringify(custom));
-  const checked = loadCheckedState();
-  delete checked['c' + id];
-  localStorage.setItem(CHECKLIST_CHECKED_KEY, JSON.stringify(checked));
+function deleteChecklistItem(id, isDefault) {
+  if (isDefault) {
+    const deleted = loadDeletedDefaults();
+    deleted.push(id);
+    localStorage.setItem(CHECKLIST_DELETED_KEY, JSON.stringify(deleted));
+  } else {
+    const custom = loadCustomItems().filter(i => i.id !== id);
+    localStorage.setItem(CHECKLIST_CUSTOM_KEY, JSON.stringify(custom));
+    const checked = loadCheckedState();
+    delete checked['c' + id];
+    localStorage.setItem(CHECKLIST_CHECKED_KEY, JSON.stringify(checked));
+  }
   renderChecklist();
 }
 
@@ -760,6 +773,73 @@ function esc(v) {
   return String(v ?? '').replace(/[&<>"']/g, c =>
     ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' }[c])
   );
+}
+
+// Static map tile from lat/lon for hover previews
+function staticMapUrl(lat, lon, zoom = 15) {
+  const n = Math.pow(2, zoom);
+  const x = Math.floor((lon + 180) / 360 * n);
+  const latRad = lat * Math.PI / 180;
+  const y = Math.floor((1 - Math.log(Math.tan(latRad) + 1 / Math.cos(latRad)) / Math.PI) / 2 * n);
+  return `https://a.basemaps.cartocdn.com/light_all/${zoom}/${x}/${y}@2x.png`;
+}
+
+// Short tourist descriptions for hover preview (keyed by stop name prefix)
+const DESCRIPTIONS = {
+  'Jiefangbei': 'Chongqing\'s iconic liberation monument square and bustling pedestrian shopping district, surrounded by skyscrapers and street food.',
+  'Bayi Road': 'Famous covered snack street running off Jiefangbei, packed with Chongqing street food — skewers, liangfen, and spicy noodles.',
+  'Mountain City Trail': 'A scenic elevated walkway through old hillside neighborhoods with river views and traditional Chongqing stilt-house architecture.',
+  'Shibati': 'Beautifully restored 18-step stairway district blending traditional Chongqing alley culture with modern art installations.',
+  'Baixiangju': 'A dramatic residential tower built into a cliff, famous for its multi-level entrances and old-school Chongqing neighborhood feel.',
+  'Huguang Guild': 'Ornate Qing-dynasty guild halls from Hunan and Hubei immigrants, showcasing traditional Chinese theater architecture.',
+  'Raffles City': 'Moshe Safdie\'s sail-shaped mega-complex on the Yangtze/Jialing confluence, with a sky bridge pool and panoramic views.',
+  'Hongya Cave': 'Spirited\'s real-life inspiration — an 11-story stilted complex carved into cliffs above the Jialing River, magical after dark.',
+  'Changjiahui': 'Restored heritage street on the south bank of the Yangtze with boutique shops, cafés, and dramatic skyline views.',
+  'Nanbin': 'South bank riverside promenade with the best unobstructed views of Chongqing\'s famous hill-city skyline.',
+  'Longmenhao': 'Atmospheric old street with Republican-era architecture perched above the river, offering rooftop views of Yuzhong.',
+  'Yangtze River Cableway': 'The last surviving urban cable car crossing the Yangtze — a 4-minute aerial ride with sweeping river panoramas.',
+  'Eling': 'A repurposed printing factory turned creative park on Eling Hill, with indie cafés, galleries, and mountain city viewpoints.',
+  'Liziba': 'The viral monorail-through-building station where Line 2 trains pass directly through a residential apartment block.',
+  'Great Hall': 'A Soviet-inspired 1950s auditorium modeled on Beijing\'s Temple of Heaven, framed by a grand public square.',
+  'Three Gorges': 'A comprehensive museum covering Chongqing history, Three Gorges dam culture, and wartime capital heritage.',
+  'Bei Cang': 'A quiet creative district with indie bookshops, specialty coffee, and local art spaces near Guanyinqiao.',
+  'Guanyinqiao': 'Jiangbei\'s vibrant commercial hub — a sprawling pedestrian zone packed with malls, hotpot restaurants, and nightlife.',
+  'Ciqikou': 'A 1,000-year-old porcelain trading town with narrow flagstone alleys, tea houses, and traditional Sichuan snacks.',
+  'Qicai': 'A rainbow-painted alley near Ciqikou with colorful murals and Instagram-worthy street art.',
+  'Chongqing Zoo': 'Home to a beloved giant panda colony and golden monkeys, set in a lush hillside park.',
+  'Traffic Tea': 'A legendary no-frills tea house unchanged since the 1980s — bamboo chairs, loose-leaf tea, and local card games.',
+  'Huangjueping': 'The world\'s largest outdoor graffiti art district, covering entire apartment blocks in vibrant murals.',
+  'Atour X': 'A stylish design hotel on Nanjing West Road, steps from Jing\'an Temple and Shanghai\'s premier shopping strip.',
+  'Xintiandi': 'An upscale dining and nightlife district in restored shikumen lane houses, blending old Shanghai charm with modern bars.',
+  'Chagee': 'China\'s fastest-growing premium tea chain, known for creamy fruit teas and elegant store design.',
+  'Bund': 'Shanghai\'s legendary waterfront promenade — a mile of Art Deco banks facing the futuristic Pudong skyline.',
+  'Shanghai Disneyland': 'Disney\'s newest and largest castle park featuring TRON Lightcycle, Pirates of the Caribbean, and Zootopia.',
+  'Yu Garden': 'A 400-year-old Ming dynasty classical garden with rock formations, pavilions, koi ponds, and the iconic Huxinting Teahouse.',
+  'Lu Bo Lang': 'An iconic Yuyuan restaurant serving refined Shanghainese dim sum, famously visited by Queen Elizabeth and Bill Clinton.',
+  'Xiao Yang': 'The original shengjianbao (pan-fried soup dumpling) chain — crispy bottoms, juicy pork filling, piping hot.',
+  'Crab-roe': 'Seasonal Shanghai delicacy — rich hairy crab roe tossed through hand-pulled noodles, deeply savory and umami.',
+  'People\'s Square': 'Shanghai\'s central civic plaza housing the Shanghai Museum, Grand Theatre, and urban parkland.',
+  'Nanjing East': 'China\'s most famous shopping street stretching from People\'s Square to the Bund — neon, crowds, and retail.',
+  'Wukang Mansion': 'A landmark 1924 Normandie apartment building at the heart of the French Concession, beloved for its flatiron shape.',
+  'Xiao Tao': 'A tiny, no-frills neighborhood noodle shop with devoted local following and early-closing hours.',
+  'Anfu Road': 'The French Concession\'s trendiest street for specialty coffee, boutique shopping, and tree-lined strolling.',
+  'To Summer': 'Guanxia (观夏) — a luxury Chinese fragrance brand with beautifully designed concept stores.',
+  'Jing\'an': 'Shanghai\'s upscale central district anchored by the golden Jing\'an Temple and premium malls.',
+  '1000 Trees': 'A Heatherwick Studio masterpiece — a terraced green building resembling a mountain, with shops and riverside views.',
+  'Holiday Inn': 'A clean, central base near Dongzhimen subway hub with easy airport express access.',
+  'Mutianyu': 'A less-crowded Great Wall section with lush forested hills, cable car access, and a toboggan ride down.',
+  'Summer Palace': 'A vast imperial garden with Kunming Lake, the Long Corridor\'s painted beams, and hilltop temples.',
+  'Wangfujing': 'Beijing\'s iconic shopping boulevard near the Forbidden City, famous for department stores and snack streets.',
+  'Siji Minfu': 'One of Beijing\'s top-rated Peking duck restaurants — crispy skin carved tableside with traditional accompaniments.',
+  'Taikoo Li': 'An open-air luxury shopping village in Sanlitun with international brands, rooftop bars, and people-watching.',
+  'Beijing Capital': 'PEK Terminal 2 — the international hub for Korean Air and other carriers, with late-night duty-free shopping.'
+};
+
+function getDescription(name) {
+  for (const [key, desc] of Object.entries(DESCRIPTIONS)) {
+    if (name.includes(key)) return desc;
+  }
+  return '';
 }
 
 function appleMaps(lat, lon, name) {
@@ -867,17 +947,14 @@ function renderChecklist() {
   const items = getFullChecklist();
   const done = items.filter(i => i.done).length;
   const total = items.length;
-  const custom = loadCustomItems();
-  const customIds = new Set(custom.map(c => c.id));
 
   const itemsHtml = items.map(i => {
-    const isCustom = customIds.has(i.id);
-    const key = isCustom ? 'c' + i.id : i.id;
+    const key = i.isDefault ? i.id : 'c' + i.id;
     return `
       <div class="checklist-item ${i.done ? 'checked' : ''}">
         <button class="checklist-check" onclick="toggleChecklistItem('${key}')" aria-label="Toggle">${i.done ? '✓' : ''}</button>
         <span class="checklist-text">${esc(i.text)}</span>
-        ${isCustom ? `<button class="checklist-delete" onclick="deleteChecklistItem(${i.id})" aria-label="Delete">✕</button>` : ''}
+        <button class="checklist-delete" onclick="deleteChecklistItem(${i.id}, ${i.isDefault})" aria-label="Delete">✕</button>
       </div>
     `;
   }).join('');
@@ -910,6 +987,42 @@ function renderOverview(view) {
   return `${cardsBlock}<div class="legs">${legs}</div>`;
 }
 
+// Period labels for each stop: keyed as "viewId-dayIndex-stopN"
+const PERIODS = {
+  // Chongqing Day 10
+  'chongqing-0-1':'Morning','chongqing-0-2':'Morning','chongqing-0-3':'Morning',
+  'chongqing-0-4':'Afternoon','chongqing-0-5':'Afternoon','chongqing-0-6':'Afternoon',
+  'chongqing-0-7':'Evening','chongqing-0-8':'Evening',
+  // Chongqing Day 11
+  'chongqing-1-9':'Morning','chongqing-1-10':'Morning',
+  'chongqing-1-11':'Afternoon','chongqing-1-12':'Afternoon',
+  // Chongqing Day 12
+  'chongqing-2-13':'Morning','chongqing-2-14':'Morning',
+  'chongqing-2-15':'Afternoon','chongqing-2-16':'Afternoon','chongqing-2-17':'Afternoon',
+  'chongqing-2-18':'Evening',
+  // Chongqing Day 13
+  'chongqing-3-19':'Morning','chongqing-3-20':'Morning',
+  'chongqing-3-21':'Afternoon','chongqing-3-22':'Afternoon','chongqing-3-23':'Afternoon',
+  // Shanghai Day 16
+  'shanghai-0-1':'Afternoon','shanghai-0-2':'Afternoon','shanghai-0-3':'Afternoon',
+  'shanghai-0-4':'Evening',
+  // Shanghai Day 17
+  'shanghai-1-5':'All day',
+  // Shanghai Day 18
+  'shanghai-2-6':'Morning','shanghai-2-7':'Morning','shanghai-2-8':'Morning','shanghai-2-9':'Morning',
+  'shanghai-2-10':'Afternoon','shanghai-2-11':'Evening',
+  // Shanghai Day 19
+  'shanghai-3-12':'Morning','shanghai-3-13':'Morning','shanghai-3-14':'Morning','shanghai-3-15':'Morning',
+  'shanghai-3-16':'Afternoon','shanghai-3-17':'Afternoon','shanghai-3-18':'Evening',
+  // Beijing Day 20
+  'beijing-0-1':'Morning','beijing-0-2':'Morning',
+  'beijing-0-3':'Afternoon','beijing-0-4':'Evening','beijing-0-5':'Evening',
+  // Beijing Day 21
+  'beijing-1-6':'Morning','beijing-1-7':'Afternoon','beijing-1-8':'Night',
+  // Beijing Day 22
+  'beijing-2-9':'Night'
+};
+
 function renderCity(city) {
   const hotel = `
     <aside class="hotel">
@@ -921,15 +1034,26 @@ function renderCity(city) {
       </div>
     </aside>`;
 
-  const days = `<div class="days">${city.days.map(day => `
-    <section class="day">
-      <div class="day-head">
-        <div class="day-title"><i class="swatch" style="background:${day.color}"></i>${esc(day.label)}</div>
-      </div>
-      <div class="route-links">
-        <a class="action" href="${appleRoute(day.stops)}" target="_blank" rel="noopener">Open route in Apple Maps</a>
-      </div>
-      ${day.stops.map(s => `
+  const days = `<div class="days">${city.days.map((day, di) => {
+    // Group stops by period
+    let lastPeriod = '';
+    const stopsHtml = day.stops.map(s => {
+      const period = PERIODS[`${city.id}-${di}-${s.n}`] || '';
+      let periodHeader = '';
+      if (period && period !== lastPeriod) {
+        lastPeriod = period;
+        periodHeader = `<div class="period-label">${period}</div>`;
+      }
+      const desc = getDescription(s.name);
+      const preview = desc ? `
+        <div class="stop-preview">
+          <img src="${staticMapUrl(s.lat, s.lon, 15)}" alt="${esc(s.name)} area" loading="lazy" />
+          <div class="stop-preview-body">
+            <strong>${esc(s.name)}</strong>
+            <p>${esc(desc)}</p>
+          </div>
+        </div>` : '';
+      return `${periodHeader}
         <article class="stop">
           <div class="num" style="background:${day.color}">${s.n}</div>
           <div>
@@ -939,8 +1063,21 @@ function renderCity(city) {
               <a class="action" href="${appleMaps(s.lat, s.lon, s.name)}" target="_blank" rel="noopener">Open in Apple Maps</a>
             </div>
           </div>
-        </article>`).join('')}
-    </section>`).join('')}</div>`;
+          ${preview}
+        </article>`;
+    }).join('');
+
+    return `
+    <section class="day">
+      <div class="day-head">
+        <div class="day-title"><i class="swatch" style="background:${day.color}"></i>${esc(day.label)}</div>
+      </div>
+      <div class="route-links">
+        <a class="action" href="${appleRoute(day.stops)}" target="_blank" rel="noopener">Open route in Apple Maps</a>
+      </div>
+      ${stopsHtml}
+    </section>`;
+  }).join('')}</div>`;
 
   return hotel + days;
 }

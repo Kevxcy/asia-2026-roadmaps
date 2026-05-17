@@ -398,13 +398,27 @@ h1 {
 
 .route-links .action { flex: 1 1 142px; }
 
+/* --- Period Labels --- */
+.period-label {
+  padding: 10px 16px 4px;
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.14em;
+  color: var(--accent);
+  border-bottom: 1px solid rgba(217, 119, 87, 0.12);
+  background: rgba(217, 119, 87, 0.03);
+}
+
 /* --- Stops --- */
 .stop {
+  position: relative;
   display: grid;
   grid-template-columns: 38px 1fr;
   gap: 12px;
   padding: 14px 16px;
   border-bottom: 1px solid var(--line);
+  cursor: default;
 }
 
 .stop:last-child { border-bottom: 0; }
@@ -419,6 +433,7 @@ h1 {
   font-weight: 800;
   font-size: 13px;
   margin-top: 1px;
+  cursor: pointer;
 }
 
 .stop b {
@@ -441,6 +456,50 @@ h1 {
   grid-template-columns: 1fr;
   gap: 8px;
   margin-top: 10px;
+}
+
+/* --- Stop Hover Preview --- */
+.stop-preview {
+  display: none;
+  position: absolute;
+  left: calc(100% + 12px);
+  top: 0;
+  z-index: 800;
+  width: 280px;
+  border-radius: 16px;
+  overflow: hidden;
+  background: #fff;
+  border: 1px solid var(--line);
+  box-shadow: 0 12px 40px rgba(0,0,0,0.12);
+  pointer-events: none;
+}
+
+.stop:hover .stop-preview { display: block; }
+
+.stop-preview img {
+  width: 100%;
+  height: 140px;
+  object-fit: cover;
+  display: block;
+  background: var(--bg2);
+}
+
+.stop-preview-body {
+  padding: 12px 14px;
+}
+
+.stop-preview-body strong {
+  display: block;
+  font-size: 13px;
+  color: var(--text);
+  margin-bottom: 4px;
+}
+
+.stop-preview-body p {
+  margin: 0;
+  font-size: 12px;
+  line-height: 1.45;
+  color: var(--text-dim);
 }
 
 /* --- Map Markers --- */
