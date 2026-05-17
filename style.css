@@ -502,6 +502,23 @@ h1 {
   color: var(--text-dim);
 }
 
+.look-for {
+  margin-top: 8px;
+  padding-top: 8px;
+  border-top: 1px dashed var(--line);
+  font-size: 11px;
+  line-height: 1.4;
+  color: var(--accent);
+}
+
+.look-for strong {
+  display: inline;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--accent);
+}
+
 /* --- Map Markers --- */
 .marker-num, .marker-hotel {
   display: grid;

@@ -794,60 +794,248 @@ function staticMapUrl(lat, lon, zoom = 15) {
 
 // Short tourist descriptions for hover preview (keyed by stop name prefix)
 const DESCRIPTIONS = {
-  'Jiefangbei': 'Chongqing\'s iconic liberation monument square and bustling pedestrian shopping district, surrounded by skyscrapers and street food.',
-  'Bayi Road': 'Famous covered snack street running off Jiefangbei, packed with Chongqing street food — skewers, liangfen, and spicy noodles.',
-  'Mountain City Trail': 'A scenic elevated walkway through old hillside neighborhoods with river views and traditional Chongqing stilt-house architecture.',
-  'Shibati': 'Beautifully restored 18-step stairway district blending traditional Chongqing alley culture with modern art installations.',
-  'Baixiangju': 'A dramatic residential tower built into a cliff, famous for its multi-level entrances and old-school Chongqing neighborhood feel.',
-  'Huguang Guild': 'Ornate Qing-dynasty guild halls from Hunan and Hubei immigrants, showcasing traditional Chinese theater architecture.',
-  'Raffles City': 'Moshe Safdie\'s sail-shaped mega-complex on the Yangtze/Jialing confluence, with a sky bridge pool and panoramic views.',
-  'Hongya Cave': 'Spirited\'s real-life inspiration — an 11-story stilted complex carved into cliffs above the Jialing River, magical after dark.',
-  'Changjiahui': 'Restored heritage street on the south bank of the Yangtze with boutique shops, cafés, and dramatic skyline views.',
-  'Nanbin': 'South bank riverside promenade with the best unobstructed views of Chongqing\'s famous hill-city skyline.',
-  'Longmenhao': 'Atmospheric old street with Republican-era architecture perched above the river, offering rooftop views of Yuzhong.',
-  'Yangtze River Cableway': 'The last surviving urban cable car crossing the Yangtze — a 4-minute aerial ride with sweeping river panoramas.',
-  'Eling': 'A repurposed printing factory turned creative park on Eling Hill, with indie cafés, galleries, and mountain city viewpoints.',
-  'Liziba': 'The viral monorail-through-building station where Line 2 trains pass directly through a residential apartment block.',
-  'Great Hall': 'A Soviet-inspired 1950s auditorium modeled on Beijing\'s Temple of Heaven, framed by a grand public square.',
-  'Three Gorges': 'A comprehensive museum covering Chongqing history, Three Gorges dam culture, and wartime capital heritage.',
-  'Bei Cang': 'A quiet creative district with indie bookshops, specialty coffee, and local art spaces near Guanyinqiao.',
-  'Guanyinqiao': 'Jiangbei\'s vibrant commercial hub — a sprawling pedestrian zone packed with malls, hotpot restaurants, and nightlife.',
-  'Ciqikou': 'A 1,000-year-old porcelain trading town with narrow flagstone alleys, tea houses, and traditional Sichuan snacks.',
-  'Qicai': 'A rainbow-painted alley near Ciqikou with colorful murals and Instagram-worthy street art.',
-  'Chongqing Zoo': 'Home to a beloved giant panda colony and golden monkeys, set in a lush hillside park.',
-  'Traffic Tea': 'A legendary no-frills tea house unchanged since the 1980s — bamboo chairs, loose-leaf tea, and local card games.',
-  'Huangjueping': 'The world\'s largest outdoor graffiti art district, covering entire apartment blocks in vibrant murals.',
-  'Atour X': 'A stylish design hotel on Nanjing West Road, steps from Jing\'an Temple and Shanghai\'s premier shopping strip.',
-  'Xintiandi': 'An upscale dining and nightlife district in restored shikumen lane houses, blending old Shanghai charm with modern bars.',
-  'Chagee': 'China\'s fastest-growing premium tea chain, known for creamy fruit teas and elegant store design.',
-  'Bund': 'Shanghai\'s legendary waterfront promenade — a mile of Art Deco banks facing the futuristic Pudong skyline.',
-  'Shanghai Disneyland': 'Disney\'s newest and largest castle park featuring TRON Lightcycle, Pirates of the Caribbean, and Zootopia.',
-  'Yu Garden': 'A 400-year-old Ming dynasty classical garden with rock formations, pavilions, koi ponds, and the iconic Huxinting Teahouse.',
-  'Lu Bo Lang': 'An iconic Yuyuan restaurant serving refined Shanghainese dim sum, famously visited by Queen Elizabeth and Bill Clinton.',
-  'Xiao Yang': 'The original shengjianbao (pan-fried soup dumpling) chain — crispy bottoms, juicy pork filling, piping hot.',
-  'Crab-roe': 'Seasonal Shanghai delicacy — rich hairy crab roe tossed through hand-pulled noodles, deeply savory and umami.',
-  'People\'s Square': 'Shanghai\'s central civic plaza housing the Shanghai Museum, Grand Theatre, and urban parkland.',
-  'Nanjing East': 'China\'s most famous shopping street stretching from People\'s Square to the Bund — neon, crowds, and retail.',
-  'Wukang Mansion': 'A landmark 1924 Normandie apartment building at the heart of the French Concession, beloved for its flatiron shape.',
-  'Xiao Tao': 'A tiny, no-frills neighborhood noodle shop with devoted local following and early-closing hours.',
-  'Anfu Road': 'The French Concession\'s trendiest street for specialty coffee, boutique shopping, and tree-lined strolling.',
-  'To Summer': 'Guanxia (观夏) — a luxury Chinese fragrance brand with beautifully designed concept stores.',
-  'Jing\'an': 'Shanghai\'s upscale central district anchored by the golden Jing\'an Temple and premium malls.',
-  '1000 Trees': 'A Heatherwick Studio masterpiece — a terraced green building resembling a mountain, with shops and riverside views.',
-  'Holiday Inn': 'A clean, central base near Dongzhimen subway hub with easy airport express access.',
-  'Mutianyu': 'A less-crowded Great Wall section with lush forested hills, cable car access, and a toboggan ride down.',
-  'Summer Palace': 'A vast imperial garden with Kunming Lake, the Long Corridor\'s painted beams, and hilltop temples.',
-  'Wangfujing': 'Beijing\'s iconic shopping boulevard near the Forbidden City, famous for department stores and snack streets.',
-  'Siji Minfu': 'One of Beijing\'s top-rated Peking duck restaurants — crispy skin carved tableside with traditional accompaniments.',
-  'Taikoo Li': 'An open-air luxury shopping village in Sanlitun with international brands, rooftop bars, and people-watching.',
-  'Beijing Capital': 'PEK Terminal 2 — the international hub for Korean Air and other carriers, with late-night duty-free shopping.'
+  'Jiefangbei': {
+    text: 'Chongqing\'s iconic liberation monument square and bustling pedestrian shopping district, surrounded by skyscrapers and street food.',
+    lookFor: 'The 1940s Liberation Monument standing in stark contrast to the surrounding ultra-modern glass towers.',
+    img: 'https://commons.wikimedia.org/wiki/Special:FilePath/Jiefangbei_CBD_202206.jpg?width=600'
+  },
+  'Bayi Road': {
+    text: 'Famous covered snack street running off Jiefangbei, packed with Chongqing street food — skewers, liangfen, and spicy noodles.',
+    lookFor: 'Long queues at Hao You Lai (好吃狗) for their signature hot and sour sweet potato noodles (Suan La Fen).',
+    img: 'https://commons.wikimedia.org/wiki/Special:FilePath/Chongqing_Jiefangbei_CBD.jpg?width=600'
+  },
+  'Mountain City Trail': {
+    text: 'A scenic elevated walkway through old hillside neighborhoods with river views and traditional Chongqing stilt-house architecture.',
+    lookFor: 'The cliffside plank road sections offering sweeping panoramas of the Yangtze River.',
+    img: 'https://commons.wikimedia.org/wiki/Special:FilePath/Shancheng_Alley,_Chongqing.jpg?width=600'
+  },
+  'Shibati': {
+    text: 'Beautifully restored 18-step stairway district blending traditional Chongqing alley culture with modern art installations.',
+    lookFor: 'The dramatic elevation changes and atmospheric lighting as evening approaches.',
+    img: 'https://commons.wikimedia.org/wiki/Special:FilePath/Chongqing_Shibati_202206.jpg?width=600'
+  },
+  'Baixiangju': {
+    text: 'A dramatic residential tower built into a cliff, famous for its multi-level entrances and old-school Chongqing neighborhood feel.',
+    lookFor: 'The Yangtze River Cableway passing directly next to the building\'s outdoor corridors.',
+    img: 'https://commons.wikimedia.org/wiki/Special:FilePath/Chongqing_Skyline_2020.jpg?width=600'
+  },
+  'Huguang Guild': {
+    text: 'Ornate Qing-dynasty guild halls from Hunan and Hubei immigrants, showcasing traditional Chinese theater architecture.',
+    lookFor: 'The bright yellow courtyard walls and the incredibly detailed wooden carvings on the opera stages.',
+    img: 'https://commons.wikimedia.org/wiki/Special:FilePath/Huguang_Guild_Hall_in_Chongqing.jpg?width=600'
+  },
+  'Raffles City': {
+    text: 'Moshe Safdie\'s sail-shaped mega-complex on the Yangtze/Jialing confluence, with a sky bridge pool and panoramic views.',
+    lookFor: 'The Crystal — a 300-meter-long horizontal skyscraper suspended across the four central towers.',
+    img: 'https://commons.wikimedia.org/wiki/Special:FilePath/Raffles_City_Chongqing_2021.jpg?width=600'
+  },
+  'Hongya Cave': {
+    text: 'Spirited Away\'s real-life inspiration — an 11-story stilted complex carved into cliffs above the Jialing River, magical after dark.',
+    lookFor: 'The view from across the river or Qiansimen Bridge when the golden lights turn on at dusk.',
+    img: 'https://commons.wikimedia.org/wiki/Special:FilePath/Hongyadong_night_view_2019.jpg?width=600'
+  },
+  'Changjiahui': {
+    text: 'Restored heritage street on the south bank of the Yangtze with boutique shops, cafés, and dramatic skyline views.',
+    lookFor: 'The French naval barracks ruins integrated into the modern retail architecture.',
+    img: 'https://commons.wikimedia.org/wiki/Special:FilePath/Chongqing_South_Bank_Night.jpg?width=600'
+  },
+  'Nanbin': {
+    text: 'South bank riverside promenade with the best unobstructed views of Chongqing\'s famous hill-city skyline.',
+    lookFor: 'The twin golden towers of the Sheraton and the sweeping view of the Yuzhong peninsula.',
+    img: 'https://commons.wikimedia.org/wiki/Special:FilePath/Chongqing_night_view_from_Nanbin_Road.jpg?width=600'
+  },
+  'Longmenhao': {
+    text: 'Atmospheric old street with Republican-era architecture perched above the river, offering rooftop views of Yuzhong.',
+    lookFor: 'Historical foreign embassy buildings and the Dongshuimen Bridge framing the city skyline.',
+    img: 'https://commons.wikimedia.org/wiki/Special:FilePath/Dongshuimen_Bridge_in_Chongqing.jpg?width=600'
+  },
+  'Yangtze River Cableway': {
+    text: 'The last surviving urban cable car crossing the Yangtze — a 4-minute aerial ride with sweeping river panoramas.',
+    lookFor: 'The sensation of gliding directly over apartment blocks and the massive muddy expanse of the Yangtze.',
+    img: 'https://commons.wikimedia.org/wiki/Special:FilePath/Yangtze_River_Cableway_Chongqing.jpg?width=600'
+  },
+  'Eling': {
+    text: 'A repurposed printing factory turned creative park on Eling Hill, with indie cafés, galleries, and mountain city viewpoints.',
+    lookFor: 'Rooftop cafes offering some of the highest panoramic views over both the Jialing and Yangtze rivers.',
+    img: 'https://commons.wikimedia.org/wiki/Special:FilePath/Eling_Park,_Chongqing.jpg?width=600'
+  },
+  'Liziba': {
+    text: 'The viral monorail-through-building station where Line 2 trains pass directly through a residential apartment block.',
+    lookFor: 'The viewing platform on the street below to catch the exact moment the train disappears into the building.',
+    img: 'https://commons.wikimedia.org/wiki/Special:FilePath/Liziba_Station_2019.jpg?width=600'
+  },
+  'Great Hall': {
+    text: 'A Soviet-inspired 1950s auditorium modeled on Beijing\'s Temple of Heaven, framed by a grand public square.',
+    lookFor: 'Locals practicing synchronized fan dances and tai chi in the vast People\'s Square at dusk.',
+    img: 'https://commons.wikimedia.org/wiki/Special:FilePath/Great_Hall_of_the_People,_Chongqing.jpg?width=600'
+  },
+  'Three Gorges': {
+    text: 'A comprehensive museum covering Chongqing history, Three Gorges dam culture, and wartime capital heritage.',
+    lookFor: 'The massive 360-degree panoramic cinema showing the landscape of the Yangtze before the dam was built.',
+    img: 'https://commons.wikimedia.org/wiki/Special:FilePath/Three_Gorges_Museum_Chongqing.jpg?width=600'
+  },
+  'Bei Cang': {
+    text: 'A quiet creative district with indie bookshops, specialty coffee, and local art spaces near Guanyinqiao.',
+    lookFor: 'The Beicang Library, a beautifully designed reading space housed in a former textile warehouse.',
+    img: 'https://commons.wikimedia.org/wiki/Special:FilePath/Beicang_Cultural_and_Creative_Quarter.jpg?width=600'
+  },
+  'Guanyinqiao': {
+    text: 'Jiangbei\'s vibrant commercial hub — a sprawling pedestrian zone packed with malls, hotpot restaurants, and nightlife.',
+    lookFor: 'The colossal 3D naked-eye LED screens on the sides of the shopping malls.',
+    img: 'https://commons.wikimedia.org/wiki/Special:FilePath/Guanyinqiao_CBD_2021.jpg?width=600'
+  },
+  'Ciqikou': {
+    text: 'A 1,000-year-old porcelain trading town with narrow flagstone alleys, tea houses, and traditional Sichuan snacks.',
+    lookFor: 'Shops rhythmically pounding peanuts and sugar into Chen Mahua (fried dough twists) right on the street.',
+    img: 'https://commons.wikimedia.org/wiki/Special:FilePath/Ciqikou_Ancient_Town_Chongqing.jpg?width=600'
+  },
+  'Qicai': {
+    text: 'A rainbow-painted alley near Ciqikou with colorful murals and Instagram-worthy street art.',
+    lookFor: 'Playful interactive murals designed specifically for taking creative photos.',
+    img: 'https://commons.wikimedia.org/wiki/Special:FilePath/Graffiti_Street_in_Chongqing.jpg?width=600'
+  },
+  'Chongqing Zoo': {
+    text: 'Home to a beloved giant panda colony and golden monkeys, set in a lush hillside park.',
+    lookFor: 'The panda enclosure during early morning feeding time when the bears are most active.',
+    img: 'https://commons.wikimedia.org/wiki/Special:FilePath/Giant_panda_at_Chongqing_Zoo.jpg?width=600'
+  },
+  'Traffic Tea': {
+    text: 'A legendary no-frills tea house unchanged since the 1980s — bamboo chairs, loose-leaf tea, and local card games.',
+    lookFor: 'The slanting wooden beams, skylights cutting through smoke, and intense games of Mahjong.',
+    img: 'https://commons.wikimedia.org/wiki/Special:FilePath/Chongqing_Teahouse.jpg?width=600'
+  },
+  'Huangjueping': {
+    text: 'The world\'s largest outdoor graffiti art district, covering entire apartment blocks in vibrant murals.',
+    lookFor: 'The Sichuan Fine Arts Institute campus, which bleeds artistic chaos into the surrounding streets.',
+    img: 'https://commons.wikimedia.org/wiki/Special:FilePath/Sichuan_Fine_Arts_Institute.jpg?width=600'
+  },
+  'Atour X': {
+    text: 'A stylish design hotel on Nanjing West Road, steps from Jing\'an Temple and Shanghai\'s premier shopping strip.',
+    lookFor: 'The modern, literary-themed lobby and close proximity to Taikoo Hui mall.',
+    img: 'https://commons.wikimedia.org/wiki/Special:FilePath/Nanjing_Road_West.jpg?width=600'
+  },
+  'Xintiandi': {
+    text: 'An upscale dining and nightlife district in restored shikumen lane houses, blending old Shanghai charm with modern bars.',
+    lookFor: 'The architectural fusion of traditional gray-brick portals framing sleek modern storefronts.',
+    img: 'https://commons.wikimedia.org/wiki/Special:FilePath/Xintiandi_Shanghai.jpg?width=600'
+  },
+  'Chagee': {
+    text: 'China\'s fastest-growing premium tea chain, known for creamy fruit teas and elegant store design.',
+    lookFor: 'Their signature Jasmine Green Milk Tea, served in a distinctly patterned, perfume-style cup.',
+    img: 'https://commons.wikimedia.org/wiki/Special:FilePath/Bubble_tea_in_Shanghai.jpg?width=600'
+  },
+  'Bund': {
+    text: 'Shanghai\'s legendary waterfront promenade — a mile of Art Deco banks facing the futuristic Pudong skyline.',
+    lookFor: 'The contrast between the 1920s Peace Hotel and the soaring 632m Shanghai Tower across the Huangpu River.',
+    img: 'https://commons.wikimedia.org/wiki/Special:FilePath/The_Bund_view_Pudong_Shanghai.jpg?width=600'
+  },
+  'Shanghai Disneyland': {
+    text: 'Disney\'s newest and largest castle park featuring TRON Lightcycle, Pirates of the Caribbean, and Zootopia.',
+    lookFor: 'The Pirates of the Caribbean: Battle for the Sunken Treasure ride — arguably the most advanced Disney ride in the world.',
+    img: 'https://commons.wikimedia.org/wiki/Special:FilePath/Enchanted_Storybook_Castle_2016.jpg?width=600'
+  },
+  'Yu Garden': {
+    text: 'A 400-year-old Ming dynasty classical garden with rock formations, pavilions, koi ponds, and the iconic Huxinting Teahouse.',
+    lookFor: 'The Exquisite Jade Rock and the zig-zag bridge designed to prevent evil spirits from crossing.',
+    img: 'https://commons.wikimedia.org/wiki/Special:FilePath/Yuyuan_Garden_Shanghai.jpg?width=600'
+  },
+  'Lu Bo Lang': {
+    text: 'An iconic Yuyuan restaurant serving refined Shanghainese dim sum, famously visited by Queen Elizabeth and Bill Clinton.',
+    lookFor: 'The eyebrow-shaped pastries and delicate crab-roe dumplings that made the restaurant globally famous.',
+    img: 'https://commons.wikimedia.org/wiki/Special:FilePath/Huxinting_Teahouse_Shanghai.jpg?width=600'
+  },
+  'Xiao Yang': {
+    text: 'The original shengjianbao (pan-fried soup dumpling) chain — crispy bottoms, juicy pork filling, piping hot.',
+    lookFor: 'The master chefs frying hundreds of buns in massive cast-iron pans right near the storefront.',
+    img: 'https://commons.wikimedia.org/wiki/Special:FilePath/Shengjian_mantou_in_Shanghai.jpg?width=600'
+  },
+  'Crab-roe': {
+    text: 'Seasonal Shanghai delicacy — rich hairy crab roe tossed through hand-pulled noodles, deeply savory and umami.',
+    lookFor: 'The golden, buttery roe sauce being poured over fresh noodles at a specialized crab noodle shop.',
+    img: 'https://commons.wikimedia.org/wiki/Special:FilePath/Crab_Roe_Noodles.jpg?width=600'
+  },
+  'People\'s Square': {
+    text: 'Shanghai\'s central civic plaza housing the Shanghai Museum, Grand Theatre, and urban parkland.',
+    lookFor: 'The weekend Marriage Market where parents gather with umbrellas displaying their children\'s dating resumes.',
+    img: 'https://commons.wikimedia.org/wiki/Special:FilePath/Peoples_Square_Shanghai.jpg?width=600'
+  },
+  'Nanjing East': {
+    text: 'China\'s most famous shopping street stretching from People\'s Square to the Bund — neon, crowds, and retail.',
+    lookFor: 'The classic trackless sightseeing trains dodging pedestrians along the pedestrian mall.',
+    img: 'https://commons.wikimedia.org/wiki/Special:FilePath/Nanjing_Road_Shanghai_2019.jpg?width=600'
+  },
+  'Wukang Mansion': {
+    text: 'A landmark 1924 Normandie apartment building at the heart of the French Concession, beloved for its flatiron shape.',
+    lookFor: 'The elegant Renaissance-style brick facade contrasting with the leafy plane trees lining the intersection.',
+    img: 'https://commons.wikimedia.org/wiki/Special:FilePath/Wukang_Mansion_2021.jpg?width=600'
+  },
+  'Xiao Tao': {
+    text: 'A tiny, no-frills neighborhood noodle shop with devoted local following and early-closing hours.',
+    lookFor: 'Scallion oil noodles (Cong You Ban Mian) topped with a perfectly fried sunny-side-up egg.',
+    img: 'https://commons.wikimedia.org/wiki/Special:FilePath/Scallion_Oil_Noodles.jpg?width=600'
+  },
+  'Anfu Road': {
+    text: 'The French Concession\'s trendiest street for specialty coffee, boutique shopping, and tree-lined strolling.',
+    lookFor: 'Street-style photographers camping out to capture the fashionable youth and expats visiting RAC Coffee.',
+    img: 'https://commons.wikimedia.org/wiki/Special:FilePath/Shanghai_French_Concession.jpg?width=600'
+  },
+  'To Summer': {
+    text: 'Guanxia (观夏) — a luxury Chinese fragrance brand with beautifully designed concept stores.',
+    lookFor: 'Their signature osmanthus and bamboo scents, presented in stunning minimalist ceramic vessels.',
+    img: 'https://commons.wikimedia.org/wiki/Special:FilePath/Shanghai_Boutique.jpg?width=600'
+  },
+  'Jing\'an': {
+    text: 'Shanghai\'s upscale central district anchored by the golden Jing\'an Temple and premium malls.',
+    lookFor: 'The striking contrast of the ancient, gilded Jing\'an Temple surrounded by ultra-modern glass skyscrapers.',
+    img: 'https://commons.wikimedia.org/wiki/Special:FilePath/Jing%27an_Temple_Shanghai.jpg?width=600'
+  },
+  '1000 Trees': {
+    text: 'A Heatherwick Studio masterpiece — a terraced green building resembling a mountain, with shops and riverside views.',
+    lookFor: 'The hundreds of structural concrete columns that double as massive planters for real trees.',
+    img: 'https://commons.wikimedia.org/wiki/Special:FilePath/Tian_An_1000_Trees.jpg?width=600'
+  },
+  'Holiday Inn': {
+    text: 'A clean, central base near Dongzhimen subway hub with easy airport express access.',
+    lookFor: 'The quick walking route to the Airport Express line, saving vital time for the Beijing departure.',
+    img: 'https://commons.wikimedia.org/wiki/Special:FilePath/Dongzhimen_Beijing.jpg?width=600'
+  },
+  'Mutianyu': {
+    text: 'A less-crowded Great Wall section with lush forested hills, cable car access, and a toboggan ride down.',
+    lookFor: 'The thrilling open-air toboggan slide down the mountain, winding through the forest from Tower 6.',
+    img: 'https://commons.wikimedia.org/wiki/Special:FilePath/Mutianyu_Great_Wall_2019.jpg?width=600'
+  },
+  'Summer Palace': {
+    text: 'A vast imperial garden with Kunming Lake, the Long Corridor\'s painted beams, and hilltop temples.',
+    lookFor: 'The Marble Boat pavilion and the 728-meter Long Corridor painted with thousands of mythological scenes.',
+    img: 'https://commons.wikimedia.org/wiki/Special:FilePath/Summer_Palace_Beijing.jpg?width=600'
+  },
+  'Wangfujing': {
+    text: 'Beijing\'s iconic shopping boulevard near the Forbidden City, famous for department stores and snack streets.',
+    lookFor: 'The APM Mall and the bustling side alleys offering everything from candied hawthorn to high-end retail.',
+    img: 'https://commons.wikimedia.org/wiki/Special:FilePath/Wangfujing_Street.jpg?width=600'
+  },
+  'Siji Minfu': {
+    text: 'One of Beijing\'s top-rated Peking duck restaurants — crispy skin carved tableside with traditional accompaniments.',
+    lookFor: 'The theatrical tableside carving process — they separate the crispy skin to dip in sugar, and the meat for pancakes.',
+    img: 'https://commons.wikimedia.org/wiki/Special:FilePath/Peking_Duck_carving.jpg?width=600'
+  },
+  'Taikoo Li': {
+    text: 'An open-air luxury shopping village in Sanlitun with international brands, rooftop bars, and people-watching.',
+    lookFor: 'The striking geometric architecture of the Apple Store and the bustling nightlife in the surrounding blocks.',
+    img: 'https://commons.wikimedia.org/wiki/Special:FilePath/Taikoo_Li_Sanlitun.jpg?width=600'
+  },
+  'Beijing Capital': {
+    text: 'PEK Terminal 2 — the international hub for Korean Air and other carriers, with late-night duty-free shopping.',
+    lookFor: 'The sunrise check-in rush; navigate to the Korean Air counters early for the 01:30 red-eye departure.',
+    img: 'https://commons.wikimedia.org/wiki/Special:FilePath/Beijing_Capital_International_Airport_Terminal_2.jpg?width=600'
+  }
 };
 
 function getDescription(name) {
   for (const [key, desc] of Object.entries(DESCRIPTIONS)) {
     if (name.includes(key)) return desc;
   }
-  return '';
+  return null;
 }
 
 function appleMaps(lat, lon, name) {
@@ -1054,13 +1242,14 @@ function renderCity(city) {
         lastPeriod = period;
         periodHeader = `<div class="period-label">${period}</div>`;
       }
-      const desc = getDescription(s.name);
-      const preview = desc ? `
+      const details = getDescription(s.name);
+      const preview = details ? `
         <div class="stop-preview">
-          <img src="${staticMapUrl(s.lat, s.lon, 15)}" alt="${esc(s.name)} area" loading="lazy" />
+          <img src="${details.img || staticMapUrl(s.lat, s.lon, 15)}" alt="${esc(s.name)} area" loading="lazy" />
           <div class="stop-preview-body">
             <strong>${esc(s.name)}</strong>
-            <p>${esc(desc)}</p>
+            <p>${esc(details.text)}</p>
+            ${details.lookFor ? `<div class="look-for"><strong>Look for:</strong> ${esc(details.lookFor)}</div>` : ''}
           </div>
         </div>` : '';
       return `${periodHeader}
