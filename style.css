@@ -445,10 +445,18 @@ h1 {
 
 .stop span {
   display: block;
+  margin-top: 4px;
   color: var(--text-dim);
   font-size: 12px;
   line-height: 1.45;
-  margin-top: 4px;
+}
+
+.stop-detail {
+  margin: 9px 0 0;
+  color: var(--text);
+  font-size: 13px;
+  line-height: 1.55;
+  max-width: 78ch;
 }
 
 .stop-actions {
