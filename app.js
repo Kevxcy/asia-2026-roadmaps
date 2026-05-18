@@ -8,6 +8,10 @@ const views = [
     "subtitle": "Add and track pre-trip to-do items"
   },
   {
+    "id": "guide", "name": "Guide", "kind": "guide",
+    "subtitle": "Itinerary website best practices implemented for field use"
+  },
+  {
     "id": "overview",
     "name": "Overview",
     "kind": "overview",
@@ -736,7 +740,16 @@ const views = [
   }
 ];
 
-const state = { active: 0, map: null, layers: null, routeLayer: null, timers: [] };
+const state = {
+  active: 0,
+  map: null,
+  layers: null,
+  routeLayer: null,
+  timers: [],
+  search: '',
+  compactDetails: false,
+  focusedStop: null
+};
 
 function clearTimers() {
   state.timers.forEach(clearTimeout);
@@ -1097,6 +1110,123 @@ function appleRoute(stops) {
   return `https://maps.apple.com/?saddr=${a.lat},${a.lon}&daddr=${b.lat},${b.lon}`;
 }
 
+function normalizeText(value) {
+  return String(value ?? '').toLowerCase().normalize('NFKD');
+}
+
+function stopSearchText(stop, city, day) {
+  return normalizeText([city?.name, day?.label, stop.name, stop.cn, stop.note, stop.detail].join(' '));
+}
+
+function matchesSearch(stop, city, day) {
+  if (!state.search) return true;
+  return state.search.split(/\s+/).filter(Boolean).every(term => stopSearchText(stop, city, day).includes(term));
+}
+
+function allStops(city) {
+  return city.days.flatMap((day, dayIndex) => day.stops.map(stop => ({ stop, day, dayIndex, city })));
+}
+
+function stopDomId(cityId, dayIndex, stopNumber) {
+  return `stop-${cityId}-${dayIndex}-${stopNumber}`;
+}
+
+function getTimePeriod(cityId, dayIndex, stopNumber) {
+  return PERIODS[`${cityId}-${dayIndex}-${stopNumber}`] || '';
+}
+
+function summarizeCity(city) {
+  const stops = allStops(city);
+  const fallbackTerms = /(museum|mall|indoor|air-conditioned|air conditioned|ac|rain|heat fallback|hotel|café|cafe)/i;
+  const transferTerms = /(airport|flight|hsr|train|transfer|check-in|red-eye|station)/i;
+  const fallback = stops.find(({ stop }) => fallbackTerms.test(`${stop.name} ${stop.note} ${stop.detail || ''}`));
+  const transfer = stops.find(({ stop }) => transferTerms.test(`${stop.name} ${stop.note} ${stop.detail || ''}`));
+  return {
+    dayCount: city.days.length,
+    stopCount: stops.length,
+    anchor: stops[0]?.stop?.name || 'Route start',
+    fallback: fallback?.stop?.name || 'Use hotel/base as reset point',
+    transfer: transfer?.stop?.note || 'No major same-day transfer flagged'
+  };
+}
+
+function renderCityInsights(city) {
+  const summary = summarizeCity(city);
+  const visible = state.search
+    ? allStops(city).filter(({ stop, day }) => matchesSearch(stop, city, day)).length
+    : summary.stopCount;
+  const searchNote = state.search
+    ? `<div class="insight-search">Showing ${visible} of ${summary.stopCount} stops matching “${esc(state.search)}”. Clear search to restore the full itinerary.</div>`
+    : '';
+  return `
+    <section class="itinerary-insights" aria-label="Itinerary at a glance">
+      <article><span>At a glance</span><strong>${summary.dayCount} days · ${summary.stopCount} mapped stops</strong></article>
+      <article><span>First anchor</span><strong>${esc(summary.anchor)}</strong></article>
+      <article><span>Weather/energy fallback</span><strong>${esc(summary.fallback)}</strong></article>
+      <article><span>Transfer watch</span><strong>${esc(summary.transfer)}</strong></article>
+      ${searchNote}
+    </section>`;
+}
+
+function renderPlanningGuide() {
+  const sourceCards = [
+    ['Progressive disclosure', 'Keep the default view scannable, then reveal deeper stop notes on demand. NN/g frames this as reducing learning cost and error-prone clutter.'],
+    ['Mobile-first route decisions', 'Put map links, day anchors, search, and touch-sized controls above visual flourish; the phone is the actual field device.'],
+    ['Offline and local-app redundancy', 'China travel needs Amap/Dianping/Trip.com backups even when Apple Maps links exist. Cache hotel names, Chinese addresses, and transfer notes.'],
+    ['Accessible structure', 'Use semantic sections, labels, strong contrast, keyboard-safe inputs, and clear tap targets aligned with W3C accessibility principles.'],
+    ['Contingency design', 'Every packed day needs heat/rain/energy fallbacks, transfer buffers, and “skip if queue is dumb” notes. Tourism is project management with jet lag.']
+  ];
+  return `
+    <div class="guide-grid">
+      <section class="guide-hero">
+        <div class="label">Implanted best practices</div>
+        <h2>Itinerary website upgrades</h2>
+        <p>Built from travel-planning UX patterns: scannable days, map-first context, local navigation links, progressive details, offline prep, and explicit fallback planning.</p>
+      </section>
+      ${sourceCards.map(([title, body]) => `<article class="guide-card"><strong>${esc(title)}</strong><span>${esc(body)}</span></article>`).join('')}
+      <section class="guide-card wide">
+        <strong>Field-use checklist</strong>
+        <span>Before leaving each hotel: open the day tab, search for the current stop if needed, open Apple Maps/Amap, confirm hours on Dianping/Trip.com, and identify one indoor reset point before the heat makes everyone weird.</span>
+      </section>
+    </div>`;
+}
+
+function focusStop(cityId, dayIndex, stopNumber) {
+  state.focusedStop = { cityId, dayIndex, stopNumber };
+  const city = views.find(v => v.id === cityId);
+  const stop = city?.days?.[dayIndex]?.stops?.find(s => s.n === stopNumber);
+  if (stop && state.map) {
+    state.map.setView([stop.lat, stop.lon], Math.max(state.map.getZoom(), 15), { animate: true });
+    state.layers.eachLayer(layer => {
+      const ll = layer.getLatLng?.();
+      if (ll && Math.abs(ll.lat - stop.lat) < 0.00001 && Math.abs(ll.lng - stop.lon) < 0.00001) layer.openPopup();
+    });
+  }
+  const el = document.getElementById(stopDomId(cityId, dayIndex, stopNumber));
+  el?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+}
+
+function setupPlannerTools() {
+  const search = $('tripSearch');
+  const toggle = $('detailToggle');
+  if (search) {
+    search.value = state.search;
+    search.oninput = e => {
+      state.search = e.target.value.trim().toLowerCase();
+      renderView();
+      $('tripSearch')?.focus();
+    };
+  }
+  if (toggle) {
+    toggle.setAttribute('aria-pressed', String(state.compactDetails));
+    toggle.textContent = state.compactDetails ? 'Show details' : 'Compact details';
+    toggle.onclick = () => {
+      state.compactDetails = !state.compactDetails;
+      renderView();
+    };
+  }
+}
+
 // ── Map Setup ──
 function icon(label, color, hotel = false) {
   const size = hotel ? 40 : 32;
@@ -1156,6 +1286,7 @@ function renderTabs() {
 function renderView() {
   const view = views[state.active];
   renderTabs();
+  setupPlannerTools();
 
   const mapWrap = document.querySelector('.map-wrap');
   const content = $('content');
@@ -1168,6 +1299,17 @@ function renderView() {
     content.classList.add('checklist-content');
     content.classList.remove('content-full');
     renderChecklist();
+    return;
+  }
+
+  if (view.kind === 'guide') {
+    $('eyebrow').textContent = 'Planning UX';
+    $('title').textContent = view.name;
+    $('subtitle').textContent = view.subtitle;
+    mapWrap.classList.add('hidden');
+    content.classList.remove('checklist-content');
+    content.classList.add('content-full');
+    content.innerHTML = renderPlanningGuide();
     return;
   }
 
@@ -1283,10 +1425,11 @@ function renderCity(city) {
     </aside>`;
 
   const days = `<div class="days">${city.days.map((day, di) => {
-    // Group stops by period
+    // Group stops by period and apply global search filtering
     let lastPeriod = '';
-    const stopsHtml = day.stops.map(s => {
-      const period = PERIODS[`${city.id}-${di}-${s.n}`] || '';
+    const visibleStops = day.stops.filter(s => matchesSearch(s, city, day));
+    const stopsHtml = visibleStops.map(s => {
+      const period = getTimePeriod(city.id, di, s.n);
       let periodHeader = '';
       if (period && period !== lastPeriod) {
         lastPeriod = period;
@@ -1302,13 +1445,16 @@ function renderCity(city) {
             ${details.lookFor ? `<div class="look-for"><strong>Look for:</strong> ${esc(details.lookFor)}</div>` : ''}
           </div>
         </div>` : '';
+      const detailBlock = s.detail
+        ? `<details class="stop-detail" ${state.compactDetails ? '' : 'open'}><summary>Why go / logistics</summary><p>${esc(s.detail)}</p></details>`
+        : '';
       return `${periodHeader}
-        <article class="stop">
-          <div class="num" style="background:${day.color}">${s.n}</div>
+        <article class="stop" id="${stopDomId(city.id, di, s.n)}">
+          <button class="num" type="button" style="background:${day.color}" onclick="focusStop('${city.id}', ${di}, ${s.n})" aria-label="Focus ${esc(s.name)} on map">${s.n}</button>
           <div>
             <b>${esc(s.name)}</b>
             <span>${esc(s.cn)} · ${esc(s.note)}</span>
-            ${s.detail ? `<p class="stop-detail">${esc(s.detail)}</p>` : ''}
+            ${detailBlock}
             <div class="stop-actions">
               <a class="action" href="${appleMaps(s.lat, s.lon, s.name)}" target="_blank" rel="noopener noreferrer">Open in Apple Maps</a>
             </div>
@@ -1317,19 +1463,23 @@ function renderCity(city) {
         </article>`;
     }).join('');
 
-    return `
-    <section class="day">
+      const emptyDay = visibleStops.length === 0
+        ? `<div class="empty-day">No stops on this day match “${esc(state.search)}”.</div>`
+        : '';
+      return `
+    <section class="day ${visibleStops.length === 0 ? 'day-empty' : ''}">
       <div class="day-head">
         <div class="day-title"><i class="swatch" style="background:${day.color}"></i>${esc(day.label)}</div>
+        <div class="day-count">${visibleStops.length}/${day.stops.length} stops</div>
       </div>
       <div class="route-links">
         <a class="action" href="${appleRoute(day.stops)}" target="_blank" rel="noopener noreferrer">Open route in Apple Maps</a>
       </div>
-      ${stopsHtml}
+      ${emptyDay || stopsHtml}
     </section>`;
   }).join('')}</div>`;
 
-  return hotel + days;
+  return hotel + renderCityInsights(city) + days;
 }
 
 // ── Map Markers & Routes ──
@@ -1375,7 +1525,7 @@ function renderMap(view) {
     L.marker([h.lat, h.lon], { icon: icon('H', 'var(--accent)', true) })
       .bindPopup(popupHtml(h)).addTo(state.layers);
 
-    view.days.forEach(day => day.stops.forEach(s => {
+    view.days.forEach(day => day.stops.filter(s => matchesSearch(s, view, day)).forEach(s => {
       bounds.push([s.lat, s.lon]);
       L.marker([s.lat, s.lon], { icon: icon(s.n, day.color) })
         .bindPopup(popupHtml(s)).addTo(state.layers);

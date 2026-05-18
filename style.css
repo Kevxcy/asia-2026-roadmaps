@@ -50,6 +50,7 @@ body {
   font-family: "Styrene A", Inter, ui-sans-serif, -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", sans-serif;
   -webkit-font-smoothing: antialiased;
   line-height: 1.5;
+  overflow-x: hidden;
 }
 
 a, button { -webkit-tap-highlight-color: rgba(217, 119, 87, 0.2); }
@@ -98,8 +99,64 @@ button    { font: inherit; color: inherit; cursor: pointer; }
 /* --- Tabs --- */
 .tabs {
   display: grid;
-  grid-template-columns: repeat(6, minmax(0, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(118px, 1fr));
   gap: 8px;
+}
+
+.planner-tools {
+  margin-top: 10px;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 8px;
+  align-items: end;
+}
+
+.search-wrap {
+  display: grid;
+  gap: 5px;
+}
+
+.search-wrap span {
+  color: var(--text-muted);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.search-wrap input {
+  width: 100%;
+  min-height: 44px;
+  border-radius: 999px;
+  border: 1px solid var(--line);
+  background: rgba(255,255,255,0.72);
+  color: var(--text);
+  padding: 0 16px;
+  font: inherit;
+  font-size: 13px;
+  outline: none;
+}
+
+.search-wrap input:focus {
+  border-color: var(--accent-border);
+  box-shadow: 0 0 0 4px rgba(217, 119, 87, 0.08);
+}
+
+.tool-toggle {
+  min-height: 44px;
+  border-radius: 999px;
+  border: 1px solid var(--line);
+  background: var(--surface);
+  color: var(--text-dim);
+  font-weight: 700;
+  font-size: 12px;
+  padding: 0 14px;
+}
+
+.tool-toggle[aria-pressed="true"] {
+  color: var(--accent);
+  border-color: var(--accent-border);
+  background: var(--accent-dim);
 }
 
 .tab {
@@ -286,6 +343,102 @@ h1 {
 
 .overview-grid { display: grid; gap: 12px; }
 
+/* --- Planning Guide / Itinerary Best Practices --- */
+.guide-grid {
+  display: grid;
+  gap: 14px;
+}
+
+.guide-hero,
+.guide-card,
+.itinerary-insights {
+  border: 1px solid var(--line);
+  border-radius: 20px;
+  background: var(--bg);
+}
+
+.guide-hero {
+  padding: 22px;
+  background:
+    radial-gradient(circle at top right, rgba(217, 119, 87, 0.18), transparent 34%),
+    var(--bg);
+}
+
+.guide-hero h2 {
+  margin: 8px 0 8px;
+  font-size: clamp(26px, 5vw, 46px);
+  line-height: 0.98;
+  letter-spacing: -0.04em;
+}
+
+.guide-hero p,
+.guide-card span {
+  display: block;
+  color: var(--text-dim);
+  font-size: 13px;
+  line-height: 1.55;
+}
+
+.guide-card {
+  padding: 16px;
+}
+
+.guide-card strong {
+  display: block;
+  margin-bottom: 6px;
+  font-size: 15px;
+}
+
+.guide-card.wide { border-color: var(--accent-border); }
+
+.itinerary-insights {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+  padding: 14px;
+  background: linear-gradient(180deg, rgba(217, 119, 87, 0.06), rgba(249, 248, 240, 0.94));
+}
+
+.itinerary-insights article {
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  background: rgba(255,255,255,0.55);
+  padding: 12px;
+}
+
+.itinerary-insights span,
+.insight-search,
+.day-count {
+  color: var(--text-muted);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.itinerary-insights strong {
+  display: block;
+  margin-top: 5px;
+  font-size: 13px;
+  line-height: 1.35;
+}
+
+.insight-search {
+  grid-column: 1 / -1;
+  padding: 10px 12px;
+  border-radius: 14px;
+  color: var(--accent);
+  background: var(--accent-dim);
+}
+
+.empty-day {
+  padding: 18px 16px;
+  color: var(--text-muted);
+  font-size: 13px;
+}
+
+.day-empty { opacity: 0.68; }
+
 /* --- Leg Cards (Route Segments) --- */
 .leg-card {
   border: 1px solid var(--line);
@@ -426,6 +579,8 @@ h1 {
 .num {
   width: 32px;
   height: 32px;
+  border: 0;
+  padding: 0;
   border-radius: 999px;
   display: grid;
   place-items: center;
@@ -434,6 +589,11 @@ h1 {
   font-size: 13px;
   margin-top: 1px;
   cursor: pointer;
+}
+
+.num:focus-visible {
+  outline: 3px solid rgba(217, 119, 87, 0.35);
+  outline-offset: 2px;
 }
 
 .stop b {
@@ -459,6 +619,16 @@ h1 {
   max-width: 78ch;
 }
 
+.stop-detail summary {
+  cursor: pointer;
+  color: var(--accent);
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+}
+
+.stop-detail p { margin: 7px 0 0; }
+
 .stop-actions {
   display: grid;
   grid-template-columns: 1fr;
@@ -470,10 +640,10 @@ h1 {
 .stop-preview {
   display: none;
   position: absolute;
-  left: calc(100% + 12px);
-  top: 0;
+  right: 12px;
+  top: 8px;
   z-index: 800;
-  width: 280px;
+  width: min(280px, calc(100% - 24px));
   border-radius: 16px;
   overflow: hidden;
   background: #fff;
@@ -642,6 +812,9 @@ h1 {
 @media (min-width: 860px) {
   .shell { padding-left: 34px; padding-right: 34px; }
 
+  .guide-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .guide-hero, .guide-card.wide { grid-column: 1 / -1; }
+
   .panel-head { padding: 28px; }
 
   .content {
@@ -663,10 +836,13 @@ h1 {
 
 @media (max-width: 720px) {
   .tabs { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .planner-tools { grid-template-columns: 1fr; }
+  .tool-toggle { width: 100%; }
   .brand span { display: none; }
   h1 { font-size: 36px; }
   #map { height: 56vh; min-height: 390px; }
   .checklist-content { grid-template-columns: 1fr !important; }
+  .itinerary-insights { grid-template-columns: 1fr; }
 }
 
 @media (max-width: 390px) {
